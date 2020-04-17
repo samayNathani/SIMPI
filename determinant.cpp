@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #inlucde <math.h>
 
+/*
+   determinant takes a float array, A, of the matrix and
+   dim, which is the n dimension of the nxn matrix A
+   returns a float value which is the determinant of that matrix
+*/
 float determinant(float *A,int dim){
     if (dim == 1){
         return A[0];
@@ -37,7 +42,6 @@ float determinant(float *A,int dim){
     }
     return det;
 }
-
 
 int main(){
     float A[] = {1,0,0,0,0,4,0,0,0,0,9,0,0,0,0,1};
