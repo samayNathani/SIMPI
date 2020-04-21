@@ -1,4 +1,4 @@
-mpi : mpi.cpp user
-	g++ mpi.cpp -o mpi -std=c++11
-user : user.cpp
-	g++ user.cpp -o user -std=c++11
+mpi.o : mpi.cpp user.o
+	g++ mpi.cpp -o mpi.o -std=c++11 -lrt
+user.o : user.cpp
+	g++ user.cpp -o user.o -std=c++11 -lrt
