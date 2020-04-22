@@ -16,6 +16,7 @@ int main()
     constants->get(0) = 5.0;
     constants->get(1) = 7.0;
     vector* solution = jacobi_method(eq, constants, 1, 0);
+
     std::cout << "x: " << solution->get(0) << std::endl;
     std::cout << "y: " << solution->get(1) << std::endl;
 
@@ -24,13 +25,13 @@ int main()
 }
 
 vector* jacobi_method(matrix* equations, vector* constants, int processCount, int id) {
-    vector *prev = new vector(constants->getDim()); // shared mem
-    vector *solution = new vector(constants->getDim()); // shared mem
+    vector *prev = new vector(constants->getDim()); // shared mem containing a copy of values
+    vector *solution = new vector(constants->getDim()); // shared mem containing actual calculated values
 
     int n = constants->getDim();
 
     int work = n / processCount;
-    int i, j, k, l;
+    int i, j, k;
     int start = id * n;
     int end = start + work;
 
@@ -64,20 +65,16 @@ vector* jacobi_method(matrix* equations, vector* constants, int processCount, in
     }
     //unlock mutex
 
-    //wait for all processes
-
-
-    //lock mutex
-
-    //loop until difference is insignificant ** ask dr. eckhardt
+    //wait for all processes here
 
     //lock mutex
-    //save prev value for comparision
-
+    //loop until calculated difference is extremely small or upper bound is reached ** consult prof eckhardt
     for (k = 0; k < 100; k++)
     {
+        //lock mutex
         for (i = start; i < end; i++)
         {
+            //save prev value for comparision
             prev->get(i) = solution->get(i);
             float rowSum = 0;
             for (j = 0; j < equations->gety(); j++)
@@ -91,6 +88,7 @@ vector* jacobi_method(matrix* equations, vector* constants, int processCount, in
             solution->get(i) = rowSum;
         }
         //unlock mutex
+        //wait for all processes
     }
     //unlock mutex
 
