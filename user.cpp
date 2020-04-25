@@ -18,22 +18,19 @@ void quadratic_matrix_print(double* C)
 
 int main(int argc, char* argv[])
 {
-  printf("im alive\n");
   int par_id = atoi(argv[1]);
   printf("par_id %d\n", par_id);
   int synch_size = atoi(argv[2]);
-  printf("synch_size %d\n", synch_size);
   simpi my_simpi(par_id, synch_size);
-  printf("simpi worked\n");
+  printf("%d: simpi initialized\n", par_id);
   matrix A(my_simpi, 10, 10);
-  printf("matrix worked\n");
+  printf("%d: matrix initialized\n", par_id);
   for (int x = 0; x < MATRIX_DIMENSION_XY; x++) {
     for (int y = 0; y < MATRIX_DIMENSION_XY; y++) {
       A.get(x, y) = (double)x * y;
     }
   }
-  printf("matrix init worked\n");
+  printf("%d: matrix values initialized\n", par_id);
 
   quadratic_matrix_print(A.arr);
-  printf("matrix init worked\n");
 }
