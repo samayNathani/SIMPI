@@ -43,8 +43,10 @@ int main(int argc, char* argv[])
   for (int i = 0; i < numWorkers; i++) {
     char workerID[3];
     std::string size = std::to_string(synchObjectSize);
+    char size_cstring[size.size() + 1];
+    strcpy(size_cstring, size.c_str());
     sprintf(workerID, "%d", i);
-    char* args[] = {progname, workerID, &size[0], NULL};
+    char* args[] = {progname, workerID, size_cstring, NULL};
     if (fork() == 0) {
       execv(progname, args);
     }
