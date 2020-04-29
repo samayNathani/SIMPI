@@ -31,20 +31,15 @@ void segfault_printer(int dummy)
 
 int main(int argc, char* argv[])
 {
-  signal(SIGSEGV, segfault_printer);
   par_id = atoi(argv[1]);
-  printf("par_id %d\n", par_id);
   int synch_size = atoi(argv[2]);
   simpi my_simpi(par_id, synch_size);
-  printf("%d: simpi initialized\n", par_id);
   matrix A(my_simpi, 10, 10);
-  printf("%d: matrix initialized\n", par_id);
-  // for (int x = 0; x < MATRIX_DIMENSION_XY; x++) {
-  //   for (int y = 0; y < MATRIX_DIMENSION_XY; y++) {
-  //     A.get(x, y) = (double)x * y;
-  //   }
-  // }
-  // printf("%d: matrix values initialized\n", par_id);
 
+  for (int x = 0; x < MATRIX_DIMENSION_XY; x++) {
+    for (int y = 0; y < MATRIX_DIMENSION_XY; y++) {
+      A.get(x, y) = (double)x * y;
+    }
+  }
   quadratic_matrix_print(A.arr);
 }

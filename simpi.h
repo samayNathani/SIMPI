@@ -10,9 +10,9 @@
 #include <vector>
 
 #define SYNCH_OBJECT_MEM_NAME "simpi_shared_mem"
-
+#define UNIQUE_ID_SIZE 23
 typedef struct matrix_metadata {
-  std::string unique_id;
+  char unique_id[UNIQUE_ID_SIZE];
   int file_descriptor;
   size_t size;
   double* matrix_data;
@@ -20,7 +20,7 @@ typedef struct matrix_metadata {
 
 typedef struct synch_object {
   int par_count;
-  std::string last_matrix_id;
+  char last_matrix_id[UNIQUE_ID_SIZE];
   int ready[];
 } synch_object;
 
@@ -59,7 +59,7 @@ class matrix  // similar stuff for vector
  private:
   int xdim, ydim;
   std::string unique_id;
-  simpi* psimpi = NULL;  // for later reference
+  simpi* mysimpi = NULL;  // for later reference
  public:
   int get_x() { return xdim; }
   int get_y() { return ydim; }
@@ -67,8 +67,8 @@ class matrix  // similar stuff for vector
   matrix(simpi& simp, int x, int y)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
-    psimpi = &simp;
-    std::pair<std::string, double*> pass_back(psimpi->create_matrix(x, y));
+    mysimpi = &simp;
+    std::pair<std::string, double*> pass_back(mysimpi->create_matrix(x, y));
     unique_id = pass_back.first;
     arr = pass_back.second;
     xdim = x;
@@ -76,8 +76,8 @@ class matrix  // similar stuff for vector
   }
   ~matrix()  // destructor
   {
-    // use psimpi for getting rid of the mem and unlink stuff
-    psimpi->free_matrix(unique_id);
+    // use mysimpi for getting rid of the mem and unlink stuff
+    mysimpi->free_matrix(unique_id);
   }
   double& get(int x, int y) { return arr[x + y * xdim]; }
 };
@@ -86,7 +86,7 @@ class vector  // similar stuff for vector
 {
  private:
   int dim;
-  simpi* psimpi = NULL;  // for later reference
+  simpi* mysimpi = NULL;  // for later reference
   std::string unique_id;
 
  public:
@@ -95,16 +95,16 @@ class vector  // similar stuff for vector
   vector(simpi& simp, int a)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
-    psimpi = &simp;
-    std::pair<std::string, double*> pass_back(psimpi->create_matrix(1, a));
+    mysimpi = &simp;
+    std::pair<std::string, double*> pass_back(mysimpi->create_matrix(1, a));
     unique_id = pass_back.first;
     arr = pass_back.second;
     dim = a;
   }
   ~vector()  // destructor
   {
-    // use psimpi for getting rid of the mem and unlink stuff
-    psimpi->free_matrix(unique_id);
+    // use mysimpi for getting rid of the mem and unlink stuff
+    mysimpi->free_matrix(unique_id);
   }
   double& get(int y) { return arr[y]; }
 };
@@ -158,14 +158,13 @@ std::pair<std::string, double*> simpi::create_matrix(int x, int y)
     matrix_metadata metadata;
     metadata.size = size;
     metadata.file_descriptor = fd;
-    metadata.unique_id = unique_id;
+    strcpy(metadata.unique_id, unique_id.c_str());
     metadata.matrix_data = matrix;
     matrix_info[unique_id] = metadata;
 
     // write name to synch_object so that other processes can get the uniqie
     // id
-    synch_info->last_matrix_id = unique_id;
-
+    strcpy(synch_info->last_matrix_id, unique_id.c_str());
     synch(id, synch_info->par_count, synch_info->ready);
     std::pair<std::string, double*> pass_back;
     pass_back = std::make_pair(unique_id, matrix);
@@ -183,7 +182,7 @@ std::pair<std::string, double*> simpi::create_matrix(int x, int y)
 
     // create a metadata object
     matrix_metadata metadata;
-    metadata.unique_id = unique_id;
+    strcpy(metadata.unique_id, unique_id.c_str());
     metadata.file_descriptor = fd;
     metadata.matrix_data = matrix;
     matrix_info[unique_id] = metadata;
@@ -199,6 +198,6 @@ void simpi::free_matrix(std::string unique_id)
   // close fd, shmunmap, munmap
   matrix_metadata metadata = matrix_info[unique_id];
   close(metadata.file_descriptor);
-  shm_unlink(metadata.unique_id.c_str());
+  shm_unlink(metadata.unique_id);
   munmap(metadata.matrix_data, metadata.size);
 }
