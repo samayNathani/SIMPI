@@ -1,4 +1,8 @@
-mpi.o : mpi.cpp user.o
-	g++ mpi.cpp -o mpi.o -std=c++11 -lrt
-user.o : user.cpp
-	g++ user.cpp -o user.o -std=c++11 -lrt
+all : mpi user
+clean : 
+	rm user mpi
+	rm /dev/shm/simpi_shared_mem
+mpi : mpi.cpp user
+	g++ -gstabs mpi.cpp -o mpi -std=c++11 -lrt
+user : user.cpp
+	g++ -gstabs user.cpp -o user -std=c++11 -lrt
