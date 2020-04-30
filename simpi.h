@@ -152,8 +152,8 @@ std::pair<std::string, double*> simpi::create_matrix(int x, int y)
     int fd = shm_open(unique_id.c_str(), O_RDWR | O_CREAT | O_EXCL, 0777);
     ftruncate(fd, size);
     // allocate matrix
-    double* matrix = (double*)mmap(NULL, sizeof(double) * size,
-                                   PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    double* matrix =
+        (double*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     matrix_metadata metadata;
     metadata.size = size;
@@ -177,8 +177,8 @@ std::pair<std::string, double*> simpi::create_matrix(int x, int y)
     std::string unique_id = synch_info->last_matrix_id;
     // open and allocate the shared memory
     int fd = shm_open(unique_id.c_str(), O_RDWR, 0777);
-    double* matrix = (double*)mmap(NULL, sizeof(double) * size,
-                                   PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    double* matrix =
+        (double*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     // create a metadata object
     matrix_metadata metadata;
