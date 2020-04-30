@@ -1,8 +1,10 @@
+CC = g++ 
+CFLAGS = -Wall -gstabs -std=c++11
+
 all : mpi user
 clean : 
-	rm user mpi
-	rm /dev/shm/simpi_shared_mem
+	rm -f user mpi /dev/shm/simpi_shared_mem
 mpi : mpi.cpp user simpi.h
-	g++ -gstabs mpi.cpp -o mpi -std=c++11 -lrt
+	$(CC) $(CFLAGS) mpi.cpp -o mpi -lrt
 user : user.cpp simpi.h
-	g++ -gstabs user.cpp -o user -std=c++11 -lrt
+	$(CC) $(CFLAGS) user.cpp -o user -lrt
