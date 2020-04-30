@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#define SYNCH_OBJECT_MEM_NAME "simpi_shared_mem"
+#define SYNCH_OBJECT_MEM_NAME "/simpi_shared_mem"
 #define UNIQUE_ID_SIZE 23
 typedef struct matrix_metadata {
   char unique_id[UNIQUE_ID_SIZE];
