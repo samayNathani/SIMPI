@@ -30,8 +30,16 @@ class simpi {
   {
     id = id_;
     int fd = shm_open(SYNCH_OBJECT_MEM_NAME, O_RDWR, 0777);
+    if (fd == -1) {
+      perror("Unable to shm_open synch_object: ");
+      exit(1);
+    }
     synch_info = (synch_object*)mmap(NULL, synch_size, PROT_READ | PROT_WRITE,
                                      MAP_SHARED, fd, 0);
+    if (synch_info == MAP_FAILED) {
+      perror("Unable to mmap synch_info: ");
+      exit(1);
+    }
   }
   ~simpi()
   {
@@ -149,11 +157,20 @@ std::pair<std::string, double*> simpi::create_matrix(int x, int y)
     // generate a uniqueid for matrix
     std::string unique_id = get_shared_mem_name();
     // create a shared mem object
-    int fd = shm_open(unique_id.c_str(), O_RDWR | O_CREAT | O_EXCL, 0777);
+    int fd = shm_open(unique_id.c_str(), O_RDWR | O_CREAT, 0777);
+    if (fd == -1) {
+      perror("Unable to shm_open matrix: ");
+      exit(1);
+    }
     ftruncate(fd, size);
+
     // allocate matrix
     double* matrix =
         (double*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (matrix == MAP_FAILED) {
+      perror("Unable to mmap matrix: ");
+      exit(1);
+    }
 
     matrix_metadata metadata;
     metadata.size = size;
@@ -177,8 +194,16 @@ std::pair<std::string, double*> simpi::create_matrix(int x, int y)
     std::string unique_id = synch_info->last_matrix_id;
     // open and allocate the shared memory
     int fd = shm_open(unique_id.c_str(), O_RDWR, 0777);
+    if (fd == -1) {
+      perror("Unable to shm_open matrix: ");
+      exit(1);
+    }
     double* matrix =
         (double*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (matrix == MAP_FAILED) {
+      perror("Unable to mmap matrix: ");
+      exit(1);
+    }
 
     // create a metadata object
     matrix_metadata metadata;
