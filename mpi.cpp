@@ -29,11 +29,19 @@ int main(int argc, char* argv[])
   // create shared mem for workers
   size_t synchObjectSize =
       sizeof(synch_object) + sizeof(int) * (numWorkers + 1);
-  fd = shm_open(SYNCH_OBJECT_MEM_NAME, O_RDWR | O_CREAT | O_TRUNC, 0777);
+  fd = shm_open(SYNCH_OBJECT_MEM_NAME, O_RDWR | O_CREAT, 0777);
+  if (fd == -1) {
+    perror("Unable to create synch info: ");
+    exit(1);
+  }
   ftruncate(fd, synchObjectSize);
   synch_object* shared_mem = (synch_object*)mmap(
       NULL, synchObjectSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
+  if (shared_mem == MAP_FAILED) {
+    perror("Unable to mmap shared memory: ");
+    exit(1);
+  }
   // initialize ready to zero
   for (int i = 0; i <= numWorkers; i++) {
     shared_mem->ready[i] = 0;
