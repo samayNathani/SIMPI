@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
   // create shared mem for workers
   size_t synchObjectSize =
       sizeof(synch_object) + sizeof(int) * (numWorkers + 1);
-  fd = shm_open(SYNCH_OBJECT_MEM_NAME, O_RDWR | O_CREAT | O_EXCL, 0777);
+  fd = shm_open(SYNCH_OBJECT_MEM_NAME, O_RDWR | O_CREAT | O_TRUNC, 0777);
   ftruncate(fd, synchObjectSize);
   synch_object* shared_mem = (synch_object*)mmap(
       NULL, synchObjectSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
