@@ -49,10 +49,12 @@ class simpi {
     shm_unlink(SYNCH_OBJECT_MEM_NAME);
   }
   int get_id() { return id; }
+  synch_object* get_synch_info() { return synch_info; }
 
   std::pair<std::string, double*> create_matrix(int x, int y);
 
   void free_matrix(std::string unique_id);
+  void synch(int par_id, int par_count, int* ready);
 
  private:
   int id;
@@ -60,7 +62,6 @@ class simpi {
   std::map<std::string, matrix_metadata> matrix_info;
   std::string sync_shared_mem_name;
   std::string get_shared_mem_name();
-  void synch(int par_id, int par_count, int* ready);
 };
 class matrix  // similar stuff for vector
 {
@@ -71,6 +72,9 @@ class matrix  // similar stuff for vector
  public:
   int get_x() { return xdim; }
   int get_y() { return ydim; }
+  int determinant(double* A, int n, int order);
+  void adjoint(double* A, double* adj, int order, int par_id, int par_count);
+  void getCofactor(double* A, double *temp, int p, int q, int n, int order); 
   double* arr;
   matrix(simpi& simp, int x, int y)  // constructor
   {
@@ -88,6 +92,43 @@ class matrix  // similar stuff for vector
     mysimpi->free_matrix(unique_id);
   }
   double& get(int x, int y) { return arr[x + y * xdim]; }
+matrix& inverse() 
+{ 
+    matrix *inverse = new matrix(*mysimpi, xdim, ydim);
+    matrix *adj = new matrix(*mysimpi, xdim, ydim);
+
+    // Find determinant of A[][] 
+    int det = determinant(arr, xdim, xdim); 
+    if (det == 0) 
+    { 
+        std::cout << "Singular matrix, can't find its inverse"; 
+        return *inverse; 
+    } 
+    std::cout << "Determinant is: " << det;
+    // std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
+  
+    // std::chrono::steady_clock::time_point begin2 = std::chrono::steady_clock::now();
+
+    // Find adjoint 
+    // float adj[order*order]; 
+    (*mysimpi).synch((*mysimpi).get_id(), (*mysimpi).get_synch_info()->par_count, (*mysimpi).get_synch_info()->ready);
+    //     synch(id, synch_info->par_count, synch_info->ready);
+
+    adjoint(arr, adj->arr, xdim, (*mysimpi).get_id(), (*mysimpi).get_synch_info()->par_count); 
+    (*mysimpi).synch((*mysimpi).get_id(), (*mysimpi).get_synch_info()->par_count, (*mysimpi).get_synch_info()->ready);
+
+    // std::chrono::steady_clock::time_point end2 = std::chrono::steady_clock::now();
+
+    // std::chrono::steady_clock::time_point begin3 = std::chrono::steady_clock::now();
+    // Find Inverse using formula "inverse(A) = adj(A)/det(A)" 
+    for (int i=0; i<xdim; i++) 
+        for (int j=0; j<xdim; j++) 
+            inverse->get(i,j) = adj->get(i,j)/double(det); 
+
+    
+
+    return *inverse; 
+} 
 };
 
 class vector  // similar stuff for vector
@@ -226,3 +267,92 @@ void simpi::free_matrix(std::string unique_id)
   shm_unlink(metadata.unique_id);
   munmap(metadata.matrix_data, metadata.size);
 }
+
+// Functions for Inverse of Matrix
+int matrix::determinant(double* A, int n, int order) 
+{ 
+    int D = 0; // Initialize result 
+  
+    //  Base case : if matrix contains single element 
+    if (n == 1) 
+        return A[0]; 
+  
+    double temp[order*order]; // To store cofactors 
+  
+    int sign = 1;  // To store sign multiplier 
+  
+     // Iterate for each element of first row 
+    for (int f = 0; f < n; f++) 
+    { 
+        // Getting Cofactor of A[0][f] 
+        getCofactor(A, temp, 0, f, n, order); 
+        D += sign * A[0+f*order] * determinant(temp, n - 1, order); 
+  
+        // terms are to be added with alternate sign 
+        sign = -sign; 
+    } 
+  
+    return D; 
+} 
+
+void matrix::adjoint(double* A, double* adj, int order, int par_id, int par_count) 
+{ 
+    if (order == 1) 
+    { 
+        adj[0] = 1; 
+        return; 
+    } 
+
+    int rpp = order/par_count;
+    int start = par_id * rpp;
+    int end = start + rpp;
+
+  
+    // temp is used to store cofactors of A[][] 
+    int sign = 1;
+    double temp[order * order]; 
+  
+    for (int i=0; i<order; i++) 
+    { 
+        for (int j=start; j<end; j++) 
+        { 
+            // Get cofactor of A[i][j] 
+            getCofactor(A, temp, i, j, order, order); 
+  
+            // sign of adj[j][i] positive if sum of row 
+            // and column indexes is even. 
+            sign = ((i+j)%2==0)? 1: -1; 
+  
+            // Interchanging rows and columns to get the 
+            // transpose of the cofactor matrix 
+            adj[j+i*order] = (sign)*(determinant(temp, order-1, order));
+        } 
+    } 
+} 
+
+void matrix::getCofactor(double* A, double *temp, int p, int q, int n, int order) 
+{ 
+    int i = 0, j = 0; 
+  
+    // Looping for each element of the matrix 
+    for (int row = 0; row < n; row++) 
+    { 
+        for (int col = 0; col < n; col++) 
+        { 
+            //  Copying into temporary matrix only those element 
+            //  which are not in given row and column 
+            if (row != p && col != q) 
+            { 
+                temp[(i) + (j++)*order] = A[row + col*order]; 
+  
+                // Row is filled, so increase row index and 
+                // reset col index 
+                if (j == n - 1) 
+                { 
+                    j = 0; 
+                    i++; 
+                } 
+            } 
+        } 
+    } 
+} 
