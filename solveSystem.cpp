@@ -16,9 +16,11 @@ int main()
  */
 vector* solveSystem(matrix* equations, vector* constants, int processCount, int id) {
 
-    //TODO: initialize shared memory
+    //TODO: initialize shared memory if id is 0
     vector *prev = new vector(constants->getDim()); // shared mem containing a copy of values
     vector *solution = new vector(constants->getDim()); // shared mem containing actual calculated values
+    matrix* saveEq = new matrix(equations->getx(),equations->gety());
+    vector* saveConst = new vector(constants->getDim());
 
     int n = constants->getDim();
 
@@ -29,6 +31,16 @@ vector* solveSystem(matrix* equations, vector* constants, int processCount, int 
     int i, j, k;
     int start = id * n;
     int end = start + work;
+
+    //Save Matrix and Vector
+    for (i = start; i < end; i++) {
+        for (j = 0; j < equations->gety(); j++) {
+            saveEq->get(i,j) = equations->get(i, j);
+        }
+        saveConst->get(i) = constants->get(i);
+    }
+
+    //wait for all processes
 
     //setup
     for (i = start; i < end; i++) {
@@ -81,6 +93,15 @@ vector* solveSystem(matrix* equations, vector* constants, int processCount, int 
         //TODO: synchObject()
         //wait for all processes
     }
+
+    //restore original matrix and vector
+    for (i = start; i < end; i++) {
+        for (j = 0; j < equations->gety(); j++) {
+            equations->get(i, j) = saveEq->get(i,j);
+        }
+        constants->get(i) = saveConst->get(i);
+    }
+    //wait for all processes
 
     if (id == 0)
     {
