@@ -36,20 +36,29 @@ int main(int argc, char* argv[])
   matrix B(my_simpi, 4, 4);
   matrix C(my_simpi, 4, 4);
 
+  my_simpi.synch();
+
   for (int y = 0; y < B.get_y(); y++) {
     for (int x = 0; x < B.get_x(); x++) {
-      B.set(x+y*B.get_x(), 3);
+      B.set(x + y * B.get_x(), 3);
     }
   }
- 
 
- for (int y = 0; y < A.get_y(); y++) {
+  for (int y = 0; y < A.get_y(); y++) {
     for (int x = 0; x < A.get_x(); x++) {
-      A.set(x+y*A.get_x(), 3);
+      A.set(x + y * A.get_x(), 3);
     }
   }
-  get_print_matrixval(B, 0, 1);
-  get_print_matrixval(B, 0, 1);
+
+  double num = A.get(0, 0);
+  printf("%f\n", num);
+
+  double num2 = A.get(0, 0);
+  printf("%f\n", num2);
+
+  // get_print_matrixval(A, 0, 1);
+  // get_print_matrixval(A, 0, 1);
+
   // quadratic_matrix_print(B);
   // quadratic_matrix_print(B);
   // quadratic_matrix_print(A);
