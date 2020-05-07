@@ -71,6 +71,8 @@ class matrix  // similar stuff for vector
   std::string unique_id;
   simpi* mysimpi = NULL;  // for later reference
  public:
+  double* arr;
+  void print();
   int get_x() { return xdim; }
   int get_y() { return ydim; }
   int determinant(double* A, int n, int order);
@@ -78,7 +80,6 @@ class matrix  // similar stuff for vector
   void getCofactor(double* A, double* temp, int p, int q, int n, int order);
   double get_algbera(int pos) { return arr[pos]; }
   void set(int pos, int val) { arr[pos] = val; }
-  double* arr;
   matrix(simpi& simp, int x, int y)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
@@ -146,6 +147,8 @@ class vector  // similar stuff for vector
   double* arr;
   int get_size() { return dim; }
   void set(int pos, double val) { arr[pos] = val; }
+  double& get(int pos) { return arr[pos]; }
+  void print();
   vector(simpi& simp, int a)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
@@ -160,7 +163,6 @@ class vector  // similar stuff for vector
     // use mysimpi for getting rid of the mem and unlink stuff
     mysimpi->free_matrix(unique_id);
   }
-  double& get(int y) { return arr[y]; }
 };
 
 std::string simpi::get_shared_mem_name()
@@ -367,4 +369,23 @@ void matrix::getCofactor(double* A,
       }
     }
   }
+}
+
+void matrix::print()
+{
+  for (int i = 0; i < ydim; i++) {
+    printf("\n");
+    for (int j = 0; j < xdim; j++) {
+      printf("%.2f,", get(i, j));
+    }
+  }
+  printf("\n");
+}
+
+void vector::print()
+{
+  for (int i = 0; i < dim; i++) {
+    printf("%.2f,\n", get(i));
+  }
+  printf("\n");
 }
