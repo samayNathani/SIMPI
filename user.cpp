@@ -50,14 +50,16 @@ int main(int argc, char* argv[])
     }
   }
 
-  double num = A.get(0, 0);
-  printf("%f\n", num);
+  // double num = A.get(0, 0);
+  // printf("%f\n", num);
 
-  double num2 = A.get(0, 0);
-  printf("%f\n", num2);
+  // double num2 = A.get(0, 0);
+  // printf("%f\n", num2);
 
-  // get_print_matrixval(A, 0, 1);
-  // get_print_matrixval(A, 0, 1);
+  get_print_matrixval(A, 1, 2);
+  my_simpi.synch();
+
+  get_print_matrixval(A, 0, 2);
 
   // quadratic_matrix_print(B);
   // quadratic_matrix_print(B);
