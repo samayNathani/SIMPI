@@ -79,6 +79,10 @@ class matrix  // similar stuff for vector
   double get_algbera(int pos) { return arr[pos]; }
   void set(int pos, int val) { arr[pos] = val; }
   matrix& multiply(matrix other);
+  matrix& add(matrix other);
+  matrix& scalar_matrix_mult(int other);
+  matrix& subtract(matrix other);
+  matrix& transpose();
   double* arr;
   matrix(simpi& simp, int x, int y)  // constructor
   {
@@ -360,10 +364,7 @@ matrix& matrix::inverse()
   mysimpi->synch();
 
   // std::chrono::steady_clock::time_point end2 =
-  // std::chrono::steady_clock::now();
-
-  // std::chrono::steady_clock::time_point begin3 =
-  // std::chrono::steady_clock::now(); Find Inverse using formula "inverse(A)
+  // std::chrono::steady_clock::now();Be using formula "inverse(A)
   // = adj(A)/det(A)"
   for (int i = 0; i < xdim; i++)
     for (int j = 0; j < xdim; j++)
@@ -375,8 +376,140 @@ matrix& matrix::inverse()
 matrix& matrix::multiply(matrix other)
 {
   matrix* result = new matrix(*mysimpi, xdim, other.get_y());
-  // implementation below
 
-  // usage: matrix C = A.multiply(B);
+  
+          
+  // printf("%d\n", get_x());
+  int Arow = get_x();
+  int Acol = get_y();
+  int Brow = other.get_x();
+  int Bcol = other.get_y();
+  int rpp = Bcol / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+
+  if (Acol != Brow) {
+    // Send error
+    printf("error");
+  }
+  mysimpi->synch();
+  printf("start = %d\n", start);
+  printf("end = %d\n", end);
+  mysimpi->synch();
+  for (int a = start; a < end; a++) {
+    for (int b = 0; b < Arow; b++) {
+      int sum = 0;
+      for (int c = 0; c < Brow; c++) {
+        // new_matrix.arr[a+b*Bcol] +=
+        // if (c + a * Brow > last_ndx || c * Arow + b > last_ndx ||
+        //     a * Arow + b) {
+        //   printf("out of bounds!");
+        //   exit(1);
+        // }
+        sum = sum + other.get_algbera(c + a * Brow) * get_algbera(c * Arow + b);
+        std::cout << sum << std::endl;
+      }
+      result->set(a * Arow + b, sum);
+      // new_matrix.arr[a+b*Bcol] +=
+  
+    }
+  }
+  mysimpi->synch();
+
+  return *result;
+}
+
+
+
+
+matrix& matrix::transpose()
+  {
+  matrix* result = new matrix(*mysimpi, get_y(), get_x());
+  int Arow = get_x();
+  int Acol = get_y();
+
+  int rows = Arow;
+  int rpp = rows / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+    for (int j = 0; j < Acol; j++) {
+      // if(A[j*Arow + i] == 4){
+      //     printf("LESSS GOOO = %d\n", j+i*Arow);
+      // }
+  result->set(j + i * Acol, get_algbera(j * Arow + i));
+     
+    }
+  }
+  return *result;
+}
+
+matrix& matrix::add(matrix other)
+{
+  matrix* result = new matrix(*mysimpi, get_x(), get_y());
+  
+  int Arow = get_x();
+  int Acol = get_y();
+  int Brow = other.get_x();
+  int Bcol = other.get_y();
+  // printf("YEs\n");
+
+  if (Arow != Brow || Acol != Bcol) {
+    // raise error
+  }
+  int rows = Arow;
+  int rpp = rows / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+    for (int j = 0; j < Acol; j++) {
+      result->set(j + i * Acol,
+            (other.get_algbera(j + i * Acol) + get_algbera(j + i * Acol)));
+      
+    }
+  }
+  // printf("End of alg\n");
+  return *result;
+}
+
+
+matrix& matrix::subtract(matrix other)
+{
+  matrix* result = new matrix(*mysimpi, get_x(), get_y());
+
+  int Arow = get_x();
+  int Acol = get_y();
+  int Brow = other.get_x();
+  int Bcol = other.get_y();
+  if (Arow != Brow || Acol != Bcol) {
+    // error
+  }
+  int rows = Arow;
+  int rpp = rows / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+    for (int j = 0; j < Acol; j++) {
+     
+      result->set(j + i * Acol,
+            (get_algbera(j + i * Acol) - other.get_algbera(j + i * Acol)));
+    }
+  }
+  return *result;
+}
+
+matrix& matrix::scalar_matrix_mult(int scaler){
+  matrix* result = new matrix(*mysimpi, get_x(), get_y());
+
+  int size = get_x();
+  int rpp = size / mysimpi->get_synch_info()->par_count;
+  int start = rpp *  mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+    for (int j = 0; j < get_y(); j++) {
+      int pos = (get_y() * i + j);
+      result -> set(pos, get_algbera(pos) * scaler);
+    }
+  }
   return *result;
 }

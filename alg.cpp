@@ -347,10 +347,7 @@ int dot_product(vector A, vector B, int par_id, int par_count)
 // ...); rows = ID; rpp = rows/count start = id * rpp end = start * rpp
 
 // quadratic_matrix_multiplication(A,B,C);
-
-// if(par_id==0)
-//     quadratic_matrix_print(C);
-
+// par_id
 // lets test the result:
 
 // return 0;
