@@ -78,6 +78,7 @@ class matrix  // similar stuff for vector
   void getCofactor(double* A, double* temp, int p, int q, int n, int order);
   double get_algbera(int pos) { return arr[pos]; }
   void set(int pos, int val) { arr[pos] = val; }
+  matrix& multiply(matrix other);
   double* arr;
   matrix(simpi& simp, int x, int y)  // constructor
   {
@@ -95,44 +96,7 @@ class matrix  // similar stuff for vector
     mysimpi->free_matrix(unique_id);
   }
   double& get(int x, int y) { return arr[x + y * xdim]; }
-  matrix& inverse()
-  {
-    matrix* inverse = new matrix(*mysimpi, xdim, ydim);
-    matrix* adj = new matrix(*mysimpi, xdim, ydim);
-
-    // Find determinant of A[][]
-    int det = determinant(arr, xdim, xdim);
-    if (det == 0) {
-      std::cout << "Singular matrix, can't find its inverse";
-      return *inverse;
-    }
-    std::cout << "Determinant is: " << det;
-    // std::chrono::steady_clock::time_point end1 =
-    // std::chrono::steady_clock::now();
-
-    // std::chrono::steady_clock::time_point begin2 =
-    // std::chrono::steady_clock::now();
-
-    // Find adjoint
-    // float adj[order*order];
-    mysimpi->synch();
-
-    adjoint(arr, adj->arr, xdim, mysimpi->get_id(),
-            mysimpi->get_synch_info()->par_count);
-    mysimpi->synch();
-
-    // std::chrono::steady_clock::time_point end2 =
-    // std::chrono::steady_clock::now();
-
-    // std::chrono::steady_clock::time_point begin3 =
-    // std::chrono::steady_clock::now(); Find Inverse using formula "inverse(A)
-    // = adj(A)/det(A)"
-    for (int i = 0; i < xdim; i++)
-      for (int j = 0; j < xdim; j++)
-        inverse->get(i, j) = adj->get(i, j) / double(det);
-
-    return *inverse;
-  }
+  matrix& inverse();
 };
 
 class vector  // similar stuff for vector
@@ -367,4 +331,52 @@ void matrix::getCofactor(double* A,
       }
     }
   }
+}
+
+matrix& matrix::inverse()
+{
+  matrix* inverse = new matrix(*mysimpi, xdim, ydim);
+  matrix* adj = new matrix(*mysimpi, xdim, ydim);
+
+  // Find determinant of A[][]
+  int det = determinant(arr, xdim, xdim);
+  if (det == 0) {
+    std::cout << "Singular matrix, can't find its inverse";
+    return *inverse;
+  }
+  std::cout << "Determinant is: " << det;
+  // std::chrono::steady_clock::time_point end1 =
+  // std::chrono::steady_clock::now();
+
+  // std::chrono::steady_clock::time_point begin2 =
+  // std::chrono::steady_clock::now();
+
+  // Find adjoint
+  // float adj[order*order];
+  mysimpi->synch();
+
+  adjoint(arr, adj->arr, xdim, mysimpi->get_id(),
+          mysimpi->get_synch_info()->par_count);
+  mysimpi->synch();
+
+  // std::chrono::steady_clock::time_point end2 =
+  // std::chrono::steady_clock::now();
+
+  // std::chrono::steady_clock::time_point begin3 =
+  // std::chrono::steady_clock::now(); Find Inverse using formula "inverse(A)
+  // = adj(A)/det(A)"
+  for (int i = 0; i < xdim; i++)
+    for (int j = 0; j < xdim; j++)
+      inverse->get(i, j) = adj->get(i, j) / double(det);
+
+  return *inverse;
+}
+
+matrix& matrix::multiply(matrix other)
+{
+  matrix* result = new matrix(*mysimpi, xdim, other.get_y());
+  // implementation below
+
+  // usage: matrix C = A.multiply(B);
+  return *result;
 }
