@@ -113,6 +113,7 @@ class vector  // similar stuff for vector
  public:
   double* arr;
   int get_size() { return dim; }
+  vector& scalar_vector_mult(int other);
   void set(int pos, double val) { arr[pos] = val; }
   vector(simpi& simp, int a)  // constructor
   {
@@ -154,13 +155,7 @@ void simpi::synch()
     for (int i = 0; i < par_count; i++) {
       if (ready[i] < synchid) {
         breakout = 0;
-        break;
-      }
-    }
-    if (breakout == 1) {
-      ready[par_count] = synchid;
-      // and here we increment the additional variable
-      break;
+        break; }
     }
   }
 }
@@ -506,10 +501,23 @@ matrix& matrix::scalar_matrix_mult(int scaler){
   int start = rpp *  mysimpi->get_id();
   int end = start + rpp;
   for (int i = start; i < end; i++) {
-    for (int j = 0; j < get_y(); j++) {
-      int pos = (get_y() * i + j);
-      result -> set(pos, get_algbera(pos) * scaler);
+      for (int j = 0; j < get_y(); j++) {
+        int pos = (get_y() * i + j);
+        result -> set(pos, get_algbera(pos) * scaler);
     }
   }
   return *result;
+}
+
+vector& vector::scalar_vector_mult(int scaler){
+  vector* result = new vector(*mysimpi, get_size());
+  int size = get_size();
+  int rpp = size / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+    result->set(i, get(i) * scaler);
+  }
+  return *result;
+
 }
