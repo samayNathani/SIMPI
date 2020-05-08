@@ -7,17 +7,6 @@
 
 int par_id;
 
-// void quadratic_matrix_print(double* C)
-// {
-//   printf("\n");
-//   for (int a = 0; a < MATRIX_DIMENSION_Y; a++) {
-//     printf("\n");
-//     for (int b = 0; b < MATRIX_DIMENSION_X; b++)
-//       printf("%.2f,", C[b + a * MATRIX_DIMENSION_X]);
-//   }
-//   printf("\n");
-// }
-
 void segfault_printer(int dummy)
 {
   char buf[20];
@@ -34,7 +23,7 @@ int main(int argc, char* argv[])
   simpi my_simpi(par_id, synch_size);
   matrix A(my_simpi, 4, 4);
   matrix B(my_simpi, 4, 4);
-  matrix C(my_simpi, 4, 4);
+  // matrix C(my_simpi, 4, 4);
 
   my_simpi.synch();
 
@@ -50,21 +39,25 @@ int main(int argc, char* argv[])
     }
   }
 
-  // double num = A.get(0, 0);
-  // printf("%f\n", num);
+  // this is the same as get_print_matrixval
+  double num = A.get(0, 0);
+  printf("%f\n", num);
 
-  // double num2 = A.get(0, 0);
-  // printf("%f\n", num2);
-
-  get_print_matrixval(A, 1, 2);
+  // this is also the same as get_print_matrixval
+  double num2 = A.get(0, 0);
+  printf("%f\n", num2);
   my_simpi.synch();
 
-  get_print_matrixval(A, 0, 2);
+  // i can call this N times and it doesn't segfault
+  double num3;
+  for (int i = 0; i < 50; i++) {
+    num3 = A.get(0, 0);
+    printf("%f\n", num3);
+  }
 
   // quadratic_matrix_print(B);
   // quadratic_matrix_print(B);
   // quadratic_matrix_print(A);
-  // quadratic_matrix_print(C);
-  // matrixmul(A,B,C,0,1);
+  // matrix C = matrixmul(A, B);
   // quadratic_matrix_print(C);
 }
