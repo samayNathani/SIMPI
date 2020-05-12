@@ -8,6 +8,10 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <iomanip>
+
+
+
 
 #define SYNCH_OBJECT_MEM_NAME "/simpi_shared_mem"
 #define UNIQUE_ID_SIZE 23
@@ -134,6 +138,16 @@ class matrix  // similar stuff for vector
 
     return *inverse;
   }
+  friend std::ostream & operator << (std::ostream &out, const matrix &m){
+    for(int i=0; i < m.ydim; i++){
+      out << "\n";
+      for(int j=0; j < m.xdim; j++){
+        out << std::fixed << std::setprecision(2) <<  m.arr[i + j * m.xdim];
+      }
+    }
+    out << "\n";
+    return out;
+  }
 };
 
 class vector  // similar stuff for vector
@@ -162,6 +176,15 @@ class vector  // similar stuff for vector
   {
     // use mysimpi for getting rid of the mem and unlink stuff
     mysimpi->free_matrix(unique_id);
+  }
+
+  friend std::ostream & operator << (std::ostream &out, const vector &V){
+    
+    for(int i=0; i < V.dim; i++){
+      out << std::fixed << std::setprecision(2) <<  V.arr[i];
+      out << "\n";
+    }
+    return out;
   }
 };
 
@@ -389,3 +412,4 @@ void vector::print()
   }
   printf("\n");
 }
+
