@@ -7,17 +7,6 @@
 
 int par_id;
 
-void quadratic_matrix_print(double* C)
-{
-  printf("\n");
-  for (int a = 0; a < MATRIX_DIMENSION_Y; a++) {
-    printf("\n");
-    for (int b = 0; b < MATRIX_DIMENSION_X; b++)
-      printf("%.2f,", C[b + a * MATRIX_DIMENSION_X]);
-  }
-  printf("\n");
-}
-
 void segfault_printer(int dummy)
 {
   char buf[20];
@@ -32,11 +21,15 @@ int main(int argc, char* argv[])
   int synch_size = atoi(argv[2]);
   simpi my_simpi(par_id, synch_size);
   matrix A(my_simpi, MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
+  vector C(my_simpi, 10);
+  my_simpi.synch();
 
   for (int y = 0; y < MATRIX_DIMENSION_Y; y++) {
     for (int x = 0; x < MATRIX_DIMENSION_X; x++) {
       A.get(x, y) = (double)x + y;
     }
   }
-  quadratic_matrix_print(A.arr);
+  A.print();
+  puts("\n");
+  C.print();
 }

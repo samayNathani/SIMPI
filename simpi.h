@@ -54,7 +54,11 @@ class simpi {
   std::pair<std::string, double*> create_matrix(int x, int y);
 
   void free_matrix(std::string unique_id);
+<<<<<<< HEAD
   void synch(int par_id, int par_count, int* ready);
+=======
+  void synch();
+>>>>>>> backbone
 
  private:
   int id;
@@ -63,6 +67,7 @@ class simpi {
   std::string sync_shared_mem_name;
   std::string get_shared_mem_name();
 };
+
 class matrix  // similar stuff for vector
 {
  private:
@@ -70,12 +75,20 @@ class matrix  // similar stuff for vector
   std::string unique_id;
   simpi* mysimpi = NULL;  // for later reference
  public:
+  double* arr;
+  void print();
   int get_x() { return xdim; }
   int get_y() { return ydim; }
   int determinant(double* A, int n, int order);
   void adjoint(double* A, double* adj, int order, int par_id, int par_count);
+<<<<<<< HEAD
   void getCofactor(double* A, double *temp, int p, int q, int n, int order); 
   double* arr;
+=======
+  void getCofactor(double* A, double* temp, int p, int q, int n, int order);
+  double get_algbera(int pos) { return arr[pos]; }
+  void set(int pos, int val) { arr[pos] = val; }
+>>>>>>> backbone
   matrix(simpi& simp, int x, int y)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
@@ -92,6 +105,7 @@ class matrix  // similar stuff for vector
     mysimpi->free_matrix(unique_id);
   }
   double& get(int x, int y) { return arr[x + y * xdim]; }
+<<<<<<< HEAD
 matrix& inverse() 
 { 
     matrix *inverse = new matrix(*mysimpi, xdim, ydim);
@@ -129,6 +143,46 @@ matrix& inverse()
 
     return *inverse; 
 } 
+=======
+  matrix& inverse()
+  {
+    matrix* inverse = new matrix(*mysimpi, xdim, ydim);
+    matrix* adj = new matrix(*mysimpi, xdim, ydim);
+
+    // Find determinant of A[][]
+    int det = determinant(arr, xdim, xdim);
+    if (det == 0) {
+      std::cout << "Singular matrix, can't find its inverse";
+      return *inverse;
+    }
+    std::cout << "Determinant is: " << det;
+    // std::chrono::steady_clock::time_point end1 =
+    // std::chrono::steady_clock::now();
+
+    // std::chrono::steady_clock::time_point begin2 =
+    // std::chrono::steady_clock::now();
+
+    // Find adjoint
+    // float adj[order*order];
+    mysimpi->synch();
+
+    adjoint(arr, adj->arr, xdim, mysimpi->get_id(),
+            mysimpi->get_synch_info()->par_count);
+    mysimpi->synch();
+
+    // std::chrono::steady_clock::time_point end2 =
+    // std::chrono::steady_clock::now();
+
+    // std::chrono::steady_clock::time_point begin3 =
+    // std::chrono::steady_clock::now(); Find Inverse using formula "inverse(A)
+    // = adj(A)/det(A)"
+    for (int i = 0; i < xdim; i++)
+      for (int j = 0; j < xdim; j++)
+        inverse->get(i, j) = adj->get(i, j) / double(det);
+
+    return *inverse;
+  }
+>>>>>>> backbone
 };
 
 class vector  // similar stuff for vector
@@ -140,7 +194,10 @@ class vector  // similar stuff for vector
 
  public:
   double* arr;
-
+  int get_size() { return dim; }
+  void set(int pos, double val) { arr[pos] = val; }
+  double& get(int pos) { return arr[pos]; }
+  void print();
   vector(simpi& simp, int a)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
@@ -155,7 +212,6 @@ class vector  // similar stuff for vector
     // use mysimpi for getting rid of the mem and unlink stuff
     mysimpi->free_matrix(unique_id);
   }
-  double& get(int y) { return arr[y]; }
 };
 
 std::string simpi::get_shared_mem_name()
@@ -169,10 +225,12 @@ std::string simpi::get_shared_mem_name()
   return name;
 }
 
-void simpi::synch(int par_id, int par_count, int* ready)
+void simpi::synch()
 {
+  int par_count = synch_info->par_count;
+  int* ready = synch_info->ready;
   int synchid = ready[par_count] + 1;
-  ready[par_id] = synchid;
+  ready[id] = synchid;
   int breakout = 0;
   while (1) {
     breakout = 1;
@@ -200,7 +258,9 @@ std::pair<std::string, double*> simpi::create_matrix(int x, int y)
     // create a shared mem object
     int fd = shm_open(unique_id.c_str(), O_RDWR | O_CREAT, 0777);
     if (fd == -1) {
-      perror("Unable to shm_open matrix: ");
+      std::string msg = std::to_string(id) + ": Unable to shm_open matrix (" +
+                        unique_id + "):  ";
+      perror(msg.c_str());
       exit(1);
     }
     ftruncate(fd, size);
@@ -223,26 +283,29 @@ std::pair<std::string, double*> simpi::create_matrix(int x, int y)
     // write name to synch_object so that other processes can get the uniqie
     // id
     strcpy(synch_info->last_matrix_id, unique_id.c_str());
-    synch(id, synch_info->par_count, synch_info->ready);
+    synch();
     std::pair<std::string, double*> pass_back;
     pass_back = std::make_pair(unique_id, matrix);
     return pass_back;
   }
   else {
     // wait for id 0 to create the shared memory for matrix
-    synch(id, synch_info->par_count, synch_info->ready);
+    synch();
     // get the unique id from the synch object
     std::string unique_id = synch_info->last_matrix_id;
     // open and allocate the shared memory
     int fd = shm_open(unique_id.c_str(), O_RDWR, 0777);
     if (fd == -1) {
-      perror("Unable to shm_open matrix: ");
+      std::string msg = std::to_string(id) + ": Unable to shm_open matrix (" +
+                        unique_id + "):  ";
+      perror(msg.c_str());
       exit(1);
     }
     double* matrix =
         (double*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (matrix == MAP_FAILED) {
-      perror("Unable to mmap matrix: ");
+      std::string msg = std::to_string(id) + ": Unable to mmap matrix: ";
+      perror(msg.c_str());
       exit(1);
     }
 
@@ -269,6 +332,7 @@ void simpi::free_matrix(std::string unique_id)
 }
 
 // Functions for Inverse of Matrix
+<<<<<<< HEAD
 int matrix::determinant(double* A, int n, int order) 
 { 
     int D = 0; // Initialize result 
@@ -356,3 +420,111 @@ void matrix::getCofactor(double* A, double *temp, int p, int q, int n, int order
         } 
     } 
 } 
+=======
+int matrix::determinant(double* A, int n, int order)
+{
+  int D = 0;  // Initialize result
+
+  //  Base case : if matrix contains single element
+  if (n == 1)
+    return A[0];
+
+  double temp[order * order];  // To store cofactors
+
+  int sign = 1;  // To store sign multiplier
+
+  // Iterate for each element of first row
+  for (int f = 0; f < n; f++) {
+    // Getting Cofactor of A[0][f]
+    getCofactor(A, temp, 0, f, n, order);
+    D += sign * A[0 + f * order] * determinant(temp, n - 1, order);
+
+    // terms are to be added with alternate sign
+    sign = -sign;
+  }
+
+  return D;
+}
+
+void matrix::adjoint(double* A,
+                     double* adj,
+                     int order,
+                     int par_id,
+                     int par_count)
+{
+  if (order == 1) {
+    adj[0] = 1;
+    return;
+  }
+
+  int rpp = order / par_count;
+  int start = par_id * rpp;
+  int end = start + rpp;
+
+  // temp is used to store cofactors of A[][]
+  int sign = 1;
+  double temp[order * order];
+
+  for (int i = 0; i < order; i++) {
+    for (int j = start; j < end; j++) {
+      // Get cofactor of A[i][j]
+      getCofactor(A, temp, i, j, order, order);
+
+      // sign of adj[j][i] positive if sum of row
+      // and column indexes is even.
+      sign = ((i + j) % 2 == 0) ? 1 : -1;
+
+      // Interchanging rows and columns to get the
+      // transpose of the cofactor matrix
+      adj[j + i * order] = (sign) * (determinant(temp, order - 1, order));
+    }
+  }
+}
+
+void matrix::getCofactor(double* A,
+                         double* temp,
+                         int p,
+                         int q,
+                         int n,
+                         int order)
+{
+  int i = 0, j = 0;
+
+  // Looping for each element of the matrix
+  for (int row = 0; row < n; row++) {
+    for (int col = 0; col < n; col++) {
+      //  Copying into temporary matrix only those element
+      //  which are not in given row and column
+      if (row != p && col != q) {
+        temp[(i) + (j++) * order] = A[row + col * order];
+
+        // Row is filled, so increase row index and
+        // reset col index
+        if (j == n - 1) {
+          j = 0;
+          i++;
+        }
+      }
+    }
+  }
+}
+
+void matrix::print()
+{
+  for (int i = 0; i < ydim; i++) {
+    printf("\n");
+    for (int j = 0; j < xdim; j++) {
+      printf("%.2f,", get(i, j));
+    }
+  }
+  printf("\n");
+}
+
+void vector::print()
+{
+  for (int i = 0; i < dim; i++) {
+    printf("%.2f,\n", get(i));
+  }
+  printf("\n");
+}
+>>>>>>> backbone
