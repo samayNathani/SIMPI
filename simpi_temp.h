@@ -87,6 +87,7 @@ class matrix  // similar stuff for vector
   matrix& scalar_matrix_mult(int other);
   matrix& subtract(matrix other);
   matrix& transpose();
+  bool matrix_is_equal(matrix other);
   matrix(simpi& simp, int x, int y)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
@@ -157,7 +158,6 @@ class matrix  // similar stuff for vector
     }
     return out;
   }
-    friend matrix operator* (matrix &m1, matrix &m2);
 };
 
 class vector  // similar stuff for vector
@@ -564,6 +564,31 @@ matrix& matrix::scalar_matrix_mult(int scaler){
   return *result;
 }
 
+bool matrix::matrix_is_equal(matrix other)
+{
+  int Arow = get_x();
+  int Acol = get_y();
+  int Brow = other.get_x();
+  int Bcol = other.get_y();
+  if (Arow != Brow || Acol != Bcol) {
+    // error
+  }
+  int rows = Arow;
+  int rpp = rows / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+    for (int j = 0; j < Acol; j++) {
+     
+      
+            if (get_algbera(j + i * Acol) != other.get_algbera(j + i * Acol)){
+              return false;
+            }
+    }
+  }
+  return true;
+}
+
 vector& vector::scalar_vector_mult(int scaler){
   vector* result = new vector(*mysimpi, get_size());
   int size = get_size();
@@ -576,3 +601,45 @@ vector& vector::scalar_vector_mult(int scaler){
   return *result;
 
 }
+
+matrix &operator*(matrix &lhs,matrix &rhs)
+{
+return lhs.multiply(rhs);
+}
+matrix &operator*(int lhs,matrix &rhs)
+{
+return rhs.scalar_matrix_mult(lhs);
+}
+matrix &operator*(matrix &lhs, int rhs)
+{
+return lhs.scalar_matrix_mult(rhs);
+}
+vector &operator*(int lhs,vector &rhs)
+{
+return rhs.scalar_vector_mult(lhs);
+}
+vector &operator*(vector &lhs, int rhs)
+{
+return lhs.scalar_vector_mult(rhs);
+}
+matrix &operator+(matrix &lhs,matrix &rhs)
+{
+return lhs.add(rhs);
+}
+void operator+=(matrix &lhs,matrix &rhs)
+{
+lhs =  lhs.add(rhs);
+}
+void operator-=(matrix &lhs,matrix &rhs)
+{
+lhs =  lhs.subtract(rhs);
+}
+matrix &operator-(matrix &lhs,matrix &rhs)
+{
+return lhs.subtract(rhs);
+}
+bool operator==( matrix &lhs,matrix &rhs)
+{
+return lhs.matrix_is_equal(rhs);
+}
+
