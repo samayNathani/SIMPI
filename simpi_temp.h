@@ -1,8 +1,10 @@
+ 
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <iomanip>
 
 #include <iostream>
 #include <map>
@@ -71,6 +73,8 @@ class matrix  // similar stuff for vector
   std::string unique_id;
   simpi* mysimpi = NULL;  // for later reference
  public:
+  double* arr;
+  void print();
   int get_x() { return xdim; }
   int get_y() { return ydim; }
   int determinant(double* A, int n, int order);
@@ -83,7 +87,6 @@ class matrix  // similar stuff for vector
   matrix& scalar_matrix_mult(int other);
   matrix& subtract(matrix other);
   matrix& transpose();
-  double* arr;
   matrix(simpi& simp, int x, int y)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
@@ -100,7 +103,61 @@ class matrix  // similar stuff for vector
     mysimpi->free_matrix(unique_id);
   }
   double& get(int x, int y) { return arr[x + y * xdim]; }
-  matrix& inverse();
+  matrix& inverse()
+  {
+    matrix* inverse = new matrix(*mysimpi, xdim, ydim);
+    matrix* adj = new matrix(*mysimpi, xdim, ydim);
+
+    // Find determinant of A[][]
+    int det = determinant(arr, xdim, xdim);
+    if (det == 0) {
+      std::cout << "Singular matrix, can't find its inverse";
+      return *inverse;
+    }
+    std::cout << "Determinant is: " << det;
+    // std::chrono::steady_clock::time_point end1 =
+    // std::chrono::steady_clock::now();
+
+    // std::chrono::steady_clock::time_point begin2 =
+    // std::chrono::steady_clock::now();
+
+    // Find adjoint
+    // float adj[order*order];
+    mysimpi->synch();
+
+    adjoint(arr, adj->arr, xdim, mysimpi->get_id(),
+            mysimpi->get_synch_info()->par_count);
+    mysimpi->synch();
+
+    // std::chrono::steady_clock::time_point end2 =
+    // std::chrono::steady_clock::now();
+
+    // std::chrono::steady_clock::time_point begin3 =
+    // std::chrono::steady_clock::now(); Find Inverse using formula "inverse(A)
+    // = adj(A)/det(A)"
+    for (int i = 0; i < xdim; i++)
+      for (int j = 0; j < xdim; j++)
+        inverse->get(i, j) = adj->get(i, j) / double(det);
+
+    return *inverse;
+  }
+
+  friend std::ostream & operator << (std::ostream &out, const matrix &m){
+      if  (m.mysimpi->get_id() == 0)
+    {
+        for(int i=0; i < m.xdim; i++){
+        out << "\n";
+        for(int j=0; j < m.ydim; j++){
+            out << std::fixed << std::setprecision(2) <<  m.arr[i + j * m.xdim];
+            out << ", ";
+        }
+        }
+        out << "\n";
+        return out;
+    }
+    return out;
+  }
+    friend matrix operator* (matrix &m1, matrix &m2);
 };
 
 class vector  // similar stuff for vector
@@ -113,8 +170,10 @@ class vector  // similar stuff for vector
  public:
   double* arr;
   int get_size() { return dim; }
-  vector& scalar_vector_mult(int other);
   void set(int pos, double val) { arr[pos] = val; }
+  double& get(int pos) { return arr[pos]; }
+  vector& scalar_vector_mult(int other);
+  void print();
   vector(simpi& simp, int a)  // constructor
   {
     // use simp and init the matrix for all processes. The id is also in simp
@@ -129,7 +188,15 @@ class vector  // similar stuff for vector
     // use mysimpi for getting rid of the mem and unlink stuff
     mysimpi->free_matrix(unique_id);
   }
-  double& get(int y) { return arr[y]; }
+
+  friend std::ostream & operator << (std::ostream &out, const vector &V){
+    
+    for(int i=0; i < V.dim; i++){
+      out << std::fixed << std::setprecision(2) <<  V.arr[i];
+      out << "\n";
+    }
+    return out;
+  }
 };
 
 std::string simpi::get_shared_mem_name()
@@ -155,7 +222,13 @@ void simpi::synch()
     for (int i = 0; i < par_count; i++) {
       if (ready[i] < synchid) {
         breakout = 0;
-        break; }
+        break;
+      }
+    }
+    if (breakout == 1) {
+      ready[par_count] = synchid;
+      // and here we increment the additional variable
+      break;
     }
   }
 }
@@ -332,49 +405,34 @@ void matrix::getCofactor(double* A,
   }
 }
 
-matrix& matrix::inverse()
+void matrix::print()
 {
-  matrix* inverse = new matrix(*mysimpi, xdim, ydim);
-  matrix* adj = new matrix(*mysimpi, xdim, ydim);
-
-  // Find determinant of A[][]
-  int det = determinant(arr, xdim, xdim);
-  if (det == 0) {
-    std::cout << "Singular matrix, can't find its inverse";
-    return *inverse;
-  }
-  std::cout << "Determinant is: " << det;
-  // std::chrono::steady_clock::time_point end1 =
-  // std::chrono::steady_clock::now();
-
-  // std::chrono::steady_clock::time_point begin2 =
-  // std::chrono::steady_clock::now();
-
-  // Find adjoint
-  // float adj[order*order];
-  mysimpi->synch();
-
-  adjoint(arr, adj->arr, xdim, mysimpi->get_id(),
-          mysimpi->get_synch_info()->par_count);
-  mysimpi->synch();
-
-  // std::chrono::steady_clock::time_point end2 =
-  // std::chrono::steady_clock::now();Be using formula "inverse(A)
-  // = adj(A)/det(A)"
-  for (int i = 0; i < xdim; i++)
-    for (int j = 0; j < xdim; j++)
-      inverse->get(i, j) = adj->get(i, j) / double(det);
-
-  return *inverse;
+    if  (mysimpi->get_id() == 0)
+    {
+        for (int i = 0; i < xdim; i++) {
+            printf("\n");
+            for (int j = 0; j < ydim; j++) {
+            printf("%.2f,", get(i, j));
+            }
+        }
+        printf("\n");
+    }
+    mysimpi->synch();
 }
+
+void vector::print()
+{
+  for (int i = 0; i < dim; i++) {
+    printf("%.2f,\n", get(i));
+  }
+  printf("\n");
+}
+
 
 matrix& matrix::multiply(matrix other)
 {
   matrix* result = new matrix(*mysimpi, xdim, other.get_y());
 
-  
-          
-  // printf("%d\n", get_x());
   int Arow = get_x();
   int Acol = get_y();
   int Brow = other.get_x();
@@ -387,6 +445,8 @@ matrix& matrix::multiply(matrix other)
     // Send error
     printf("error");
   }
+//   mysimpi->synch();
+//   mysimpi->synch();
   for (int a = start; a < end; a++) {
     for (int b = 0; b < Arow; b++) {
       int sum = 0;
@@ -405,8 +465,7 @@ matrix& matrix::multiply(matrix other)
   
     }
   }
-  mysimpi->synch();
-
+    mysimpi->synch();
   return *result;
 }
 

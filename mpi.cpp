@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "simpi.h"
+#include "simpi_temp.h"
 
 int main(int argc, char* argv[])
 {

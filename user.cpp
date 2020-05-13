@@ -2,7 +2,7 @@
 #include <string.h>
 
 // #include "alg.cpp"
-#include "simpi.h"
+#include "simpi_temp.h"
 
 // #define MATRIX_DIMENSION_X 2
 // #define MATRIX_DIMENSION_Y 3
@@ -34,9 +34,10 @@ int main(int argc, char* argv[])
   par_id = atoi(argv[1]);
   int synch_size = atoi(argv[2]);
   simpi my_simpi(par_id, synch_size);
-  matrix A(my_simpi, 4, 4);
+  matrix A(my_simpi, 4, 2);
   matrix B(my_simpi, 2, 4);
-  matrix C(my_simpi, 4, 2);
+  matrix C(my_simpi, 4, 4);
+  // matrix D(my_simpi, 4, 4);
 
   my_simpi.synch();
   int c = 100;
@@ -53,14 +54,14 @@ int main(int argc, char* argv[])
       B.set(x + y * B.get_x(), c++);
     }
   }
+  
  
-  // for(int i = 0; i < 4; i++){
-  C = B.transpose();
+  std::cout<< A;
+  std::cout<< B;
 
-  // }
-  quadratic_matrix_print(C);
+  C = A*B;
+
+  std::cout<< C;
   my_simpi.synch();
-  // quadratic_matrix_print(A);
-  // matrix C = matrixmul(A, B);
-  // quadratic_matrix_print(C);
+  return 0;
 }
