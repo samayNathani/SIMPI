@@ -139,10 +139,11 @@ class matrix  // similar stuff for vector
     return *inverse;
   }
   friend std::ostream & operator << (std::ostream &out, const matrix &m){
-    for(int i=0; i < m.ydim; i++){
+    for(int i=0; i < m.xdim; i++){
       out << "\n";
-      for(int j=0; j < m.xdim; j++){
+      for(int j=0; j < m.ydim; j++){
         out << std::fixed << std::setprecision(2) <<  m.arr[i + j * m.xdim];
+        out << ", ";
       }
     }
     out << "\n";
