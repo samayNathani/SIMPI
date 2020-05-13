@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <string.h>
+#include <fstream>
 
 #include "simpi.h"
 #define MATRIX_DIMENSION_X 2
@@ -29,7 +30,14 @@ int main(int argc, char* argv[])
       A.get(x, y) = (double)x + y;
     }
   }
-  A.print();
-  puts("\n");
-  C.print();
+  std::ofstream outputFile("test1.txt");
+  outputFile << A;
+  outputFile << "\n";
+  outputFile << C;
+  /*
+  std::cout << A;
+  std::cout << "\n";
+  std::cout << C;
+  */
+
 }
