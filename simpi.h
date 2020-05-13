@@ -138,11 +138,17 @@ class matrix  // similar stuff for vector
 
     return *inverse;
   }
-  friend std::ostream & operator << (std::ostream &out, const matrix &m){
-    for(int i=0; i < m.ydim; i++){
+  friend std::ostream& operator<<(std::ostream& out, matrix& m)
+  {
+    for (int i = 0; i < m.ydim; i++) {
       out << "\n";
-      for(int j=0; j < m.xdim; j++){
-        out << std::fixed << std::setprecision(2) <<  m.arr[i + j * m.xdim];
+      for (int j = 0; j < m.xdim; j++) {
+        if (j == 0) {
+          out << std::fixed << std::setprecision(2) << m.get(i, j);
+        }
+        else {
+          out << ", " << std::fixed << std::setprecision(2) << m.get(i, j);
+        }
       }
     }
     out << "\n";
