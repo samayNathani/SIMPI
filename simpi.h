@@ -4,14 +4,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
-#include <iomanip>
-
-
-
 
 #define SYNCH_OBJECT_MEM_NAME "/simpi_shared_mem"
 #define UNIQUE_ID_SIZE 23
@@ -184,12 +181,17 @@ class vector  // similar stuff for vector
     mysimpi->free_matrix(unique_id);
   }
 
-  friend std::ostream & operator << (std::ostream &out, const vector &V){
-    
-    for(int i=0; i < V.dim; i++){
-      out << std::fixed << std::setprecision(2) <<  V.arr[i];
-      out << "\n";
+  friend std::ostream& operator<<(std::ostream& out, const vector& V)
+  {
+    for (int i = 0; i < V.dim; i++) {
+      if (i == 0) {
+        out << std::fixed << std::setprecision(2) << V.arr[i];
+      }
+      else {
+        out << ", " << std::fixed << std::setprecision(2) << V.arr[i];
+      }
     }
+    out << "\n";
     return out;
   }
 };
@@ -418,4 +420,3 @@ void vector::print()
   }
   printf("\n");
 }
-
