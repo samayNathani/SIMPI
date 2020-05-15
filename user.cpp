@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
   matrix A(my_simpi, 4, 4);
   matrix B(my_simpi, 4, 4);
   matrix C(my_simpi, 4, 4);
-  // matrix D(my_simpi, 4, 4);
+  matrix D(my_simpi, 4, 4);
 
   my_simpi.synch();
   int c = 100;
@@ -59,10 +59,15 @@ int main(int argc, char* argv[])
   std::cout<< A;
   std::cout<< B;
 
-  A+=B;
+  C = A *B;
+  my_simpi.synch();
+  D = A *B;
   // std::cout<< (A == B) ;
 
-  std::cout<< A;
+  my_simpi.synch();
+  // // std::cout<< C;
+  // my_simpi.synch();
+  std::cout<< D;
   my_simpi.synch();
   return 0;
 }
