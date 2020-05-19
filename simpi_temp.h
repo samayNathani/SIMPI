@@ -432,15 +432,39 @@ void vector::print()
 matrix& matrix::multiply(matrix other)
 {
   matrix* result = new matrix(*mysimpi, xdim, other.get_y());
+  int number_of_processes = mysimpi->get_synch_info()->par_count;
+  int parId = mysimpi->get_id();
+  int maxProcesses = get_x();
+  if (number_of_processes > get_x()){
+    number_of_processes = get_x();
+  }
 
   int Arow = get_x();
   int Acol = get_y();
   int Brow = other.get_x();
   int Bcol = other.get_y();
-  int rpp = Bcol / mysimpi->get_synch_info()->par_count;
+  int rpp = Arow / number_of_processes;
   int start = rpp * mysimpi->get_id();
   int end = start + rpp;
-
+  
+  if (get_x() % number_of_processes != 0){
+      int leftover = Arow % number_of_processes;
+      if (parId <= leftover){
+		            parId += (Arow - leftover); 
+                int start = parId;
+                int end = start + 1;
+                for (int a = start; a < end; a++) {
+                  for (int b = 0; b < Arow; b++) {
+                    int sum = 0;
+                    for (int c = 0; c < Brow; c++) {
+                      	sum = sum + other.get_algbera(c + a * Brow) * get_algbera(c * Arow + b);
+                    }
+                    result->set(a * Arow + b, sum);
+                  }
+                }              
+                    
+      }
+  }
   if (Acol != Brow) {
     // Send error
     printf("error");
@@ -458,11 +482,8 @@ matrix& matrix::multiply(matrix other)
         //   exit(1);
         // }
         sum = sum + other.get_algbera(c + a * Brow) * get_algbera(c * Arow + b);
-        // std::cout << sum << std::endl;
       }
       result->set(a * Arow + b, sum);
-      // new_matrix.arr[a+b*Bcol] +=
-  
     }
   }
     mysimpi->synch();
