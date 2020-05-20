@@ -34,9 +34,9 @@ int main(int argc, char* argv[])
   par_id = atoi(argv[1]);
   int synch_size = atoi(argv[2]);
   simpi my_simpi(par_id, synch_size);
-  matrix A(my_simpi, 24, 5);
-  matrix B(my_simpi, 5, 19);
-  matrix C(my_simpi, 24, 19);
+  matrix A(my_simpi, 5, 5);
+  matrix B(my_simpi, 5, 5);
+  matrix C(my_simpi, 5, 5);
   matrix D(my_simpi, 4, 4);
 
   my_simpi.synch();
@@ -59,13 +59,13 @@ int main(int argc, char* argv[])
   std::cout<< A;
   std::cout<< B;
 
-  C = A *B;
+  // C = A -B;
   // my_simpi.synch();
   // D = A *B;
   // std::cout<< (A == B) ;
-
+  bool E = A==B;
   // my_simpi.synch();
-  std::cout<< C;
+  std::cout<< E;
   // my_simpi.synch();
   // std::cout<< D;
   my_simpi.synch();

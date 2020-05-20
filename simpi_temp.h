@@ -434,7 +434,7 @@ matrix& matrix::multiply(matrix other)
   matrix* result = new matrix(*mysimpi, xdim, other.get_y());
   int number_of_processes = mysimpi->get_synch_info()->par_count;
   int parId = mysimpi->get_id();
-  int maxProcesses = get_x();
+  
   if (number_of_processes > get_x()){
     number_of_processes = get_x();
   }
@@ -496,13 +496,20 @@ matrix& matrix::multiply(matrix other)
 matrix& matrix::transpose()
   {
   matrix* result = new matrix(*mysimpi, get_y(), get_x());
+  int number_of_processes = mysimpi->get_synch_info()->par_count;
+  int parId = mysimpi->get_id();
+  
+  if (number_of_processes > get_x()){
+    number_of_processes = get_x();
+  }
+
   int Arow = get_x();
   int Acol = get_y();
 
-  int rows = Arow;
-  int rpp = rows / mysimpi->get_synch_info()->par_count;
+  int rpp = Arow / number_of_processes;
   int start = rpp * mysimpi->get_id();
   int end = start + rpp;
+  
   for (int i = start; i < end; i++) {
     for (int j = 0; j < Acol; j++) {
       // if(A[j*Arow + i] == 4){
@@ -519,23 +526,43 @@ matrix& matrix::add(matrix other)
 {
   matrix* result = new matrix(*mysimpi, get_x(), get_y());
   
+  int number_of_processes = mysimpi->get_synch_info()->par_count;
+  int parId = mysimpi->get_id();
+  
+  if (number_of_processes > get_x()){
+    number_of_processes = get_x();
+  }
+
   int Arow = get_x();
   int Acol = get_y();
   int Brow = other.get_x();
   int Bcol = other.get_y();
-  // printf("YEs\n");
-
+  int rpp = Arow / number_of_processes;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  
   if (Arow != Brow || Acol != Bcol) {
     // raise error
   }
-  int rows = Arow;
-  int rpp = rows / mysimpi->get_synch_info()->par_count;
-  int start = rpp * mysimpi->get_id();
-  int end = start + rpp;
+    if (get_x() % number_of_processes != 0){
+      int leftover = Arow % number_of_processes;
+      if (parId <= leftover){
+		            parId += (Arow - leftover); 
+                int start = parId;
+                int end = start + 1;
+                for (int i = start; i < end; i++) {
+                  for (int j = 0; j < Arow; j++) {
+					result->set(j + i * Arow,
+           				 (other.get_algbera(j + i * Arow) + get_algbera(j + i *Arow)));
+                  }
+                }              
+                    
+      }
+  }
   for (int i = start; i < end; i++) {
-    for (int j = 0; j < Acol; j++) {
-      result->set(j + i * Acol,
-            (other.get_algbera(j + i * Acol) + get_algbera(j + i * Acol)));
+    for (int j = 0; j < Arow; j++) {
+      result->set(j + i * Arow,
+            (other.get_algbera(j + i * Arow) + get_algbera(j + i * Arow)));
       
     }
   }
@@ -548,22 +575,42 @@ matrix& matrix::subtract(matrix other)
 {
   matrix* result = new matrix(*mysimpi, get_x(), get_y());
 
+  int number_of_processes = mysimpi->get_synch_info()->par_count;
+  int parId = mysimpi->get_id();
+  
+  if (number_of_processes > get_x()){
+    number_of_processes = get_x();
+  }
+
   int Arow = get_x();
   int Acol = get_y();
   int Brow = other.get_x();
   int Bcol = other.get_y();
-  if (Arow != Brow || Acol != Bcol) {
-    // error
-  }
-  int rows = Arow;
-  int rpp = rows / mysimpi->get_synch_info()->par_count;
+  int rpp = Arow / number_of_processes;
   int start = rpp * mysimpi->get_id();
   int end = start + rpp;
+  
+
+	if (get_x() % number_of_processes != 0){
+      int leftover = Arow % number_of_processes;
+      if (parId <= leftover){
+		            parId += (Arow - leftover); 
+                int start = parId;
+                int end = start + 1;
+                for (int i = start; i < end; i++) {
+                  for (int j = 0; j < Arow; j++) {
+					result->set(j + i * Arow,
+           				 (other.get_algbera(j + i * Arow) - get_algbera(j + i *Arow)));
+                  }
+                }              
+                    
+      }
+  }
   for (int i = start; i < end; i++) {
-    for (int j = 0; j < Acol; j++) {
-     
-      result->set(j + i * Acol,
-            (get_algbera(j + i * Acol) - other.get_algbera(j + i * Acol)));
+    for (int j = 0; j < Arow; j++) {
+      result->set(j + i * Arow,
+            (other.get_algbera(j + i * Arow) - get_algbera(j + i * Arow)));
+      
     }
   }
   return *result;
@@ -573,9 +620,18 @@ matrix& matrix::scalar_matrix_mult(int scaler){
   matrix* result = new matrix(*mysimpi, get_x(), get_y());
 
   int size = get_x();
-  int rpp = size / mysimpi->get_synch_info()->par_count;
-  int start = rpp *  mysimpi->get_id();
+  int number_of_processes = mysimpi->get_synch_info()->par_count;
+  int parId = mysimpi->get_id();
+  
+  if (number_of_processes > get_x()){
+    number_of_processes = get_x();
+  }
+
+
+  int rpp = size / number_of_processes;
+  int start = rpp * mysimpi->get_id();
   int end = start + rpp;
+  
   for (int i = start; i < end; i++) {
       for (int j = 0; j < get_y(); j++) {
         int pos = (get_y() * i + j);
@@ -587,17 +643,25 @@ matrix& matrix::scalar_matrix_mult(int scaler){
 
 bool matrix::matrix_is_equal(matrix other)
 {
+  int number_of_processes = mysimpi->get_synch_info()->par_count;
+  int parId = mysimpi->get_id();
+  
+  if (number_of_processes > get_x()){
+    number_of_processes = get_x();
+  }
+
   int Arow = get_x();
   int Acol = get_y();
   int Brow = other.get_x();
   int Bcol = other.get_y();
+  int rpp = Arow / number_of_processes;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  
   if (Arow != Brow || Acol != Bcol) {
     // error
   }
-  int rows = Arow;
-  int rpp = rows / mysimpi->get_synch_info()->par_count;
-  int start = rpp * mysimpi->get_id();
-  int end = start + rpp;
+
   for (int i = start; i < end; i++) {
     for (int j = 0; j < Acol; j++) {
      
