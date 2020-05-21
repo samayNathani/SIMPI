@@ -4,7 +4,7 @@
 
 #include "simpi.h"
 #define MATRIX_DIMENSION_X 2
-#define MATRIX_DIMENSION_Y 3
+#define MATRIX_DIMENSION_Y 2
 
 int par_id;
 
@@ -22,22 +22,21 @@ int main(int argc, char* argv[])
   int synch_size = atoi(argv[2]);
   simpi my_simpi(par_id, synch_size);
   matrix A(my_simpi, MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
+  matrix D(my_simpi, MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
   vector C(my_simpi, 10);
   my_simpi.synch();
-
+  /*
   for (int y = 0; y < MATRIX_DIMENSION_Y; y++) {
     for (int x = 0; x < MATRIX_DIMENSION_X; x++) {
       A.get(x, y) = (double)x + y;
     }
   }
-  std::ofstream outputFile("test1.txt");
-  outputFile << A;
-  outputFile << "\n";
-  outputFile << C;
-  /*
-  std::cout << A;
-  std::cout << "\n";
-  std::cout << C;
   */
-
+  A.get(0,0) = (double)4;
+  A.get(0,1) = (double)7;
+  A.get(1,0) = (double)2;
+  A.get(1,1) = (double)6;
+  std::cout << A;
+  D = A.inverse();
+  std::cout << D; 
 }
