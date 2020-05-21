@@ -4,11 +4,14 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
+#include <iomanip>
+
+
+
 
 #define SYNCH_OBJECT_MEM_NAME "/simpi_shared_mem"
 #define UNIQUE_ID_SIZE 23
@@ -135,21 +138,19 @@ class matrix  // similar stuff for vector
 
     return *inverse;
   }
-  friend std::ostream& operator<<(std::ostream& out, matrix& m)
-  {
-    for (int i = 0; i < m.ydim; i++) {
-      out << "\n";
-      for (int j = 0; j < m.xdim; j++) {
-        if (j == 0) {
-          out << std::fixed << std::setprecision(2) << m.get(i, j);
-        }
-        else {
-          out << ", " << std::fixed << std::setprecision(2) << m.get(i, j);
+  friend std::ostream & operator << (std::ostream &out, const matrix &m){
+    if(m.mysimpi->get_id()==0){
+      for(int i=0; i < m.xdim; i++){
+        out << "\n";
+        for(int j=0; j < m. ydim; j++){
+          out << std::fixed << std::setprecision(2) <<  m.arr[i + j * m.xdim];
+          out << ", ";
         }
       }
+      out << "\n";
+      return out;
     }
-    out << "\n";
-    return out;
+    return out; 
   }
 };
 
@@ -181,17 +182,12 @@ class vector  // similar stuff for vector
     mysimpi->free_matrix(unique_id);
   }
 
-  friend std::ostream& operator<<(std::ostream& out, const vector& V)
-  {
-    for (int i = 0; i < V.dim; i++) {
-      if (i == 0) {
-        out << std::fixed << std::setprecision(2) << V.arr[i];
-      }
-      else {
-        out << ", " << std::fixed << std::setprecision(2) << V.arr[i];
-      }
+  friend std::ostream & operator << (std::ostream &out, const vector &V){
+    
+    for(int i=0; i < V.dim; i++){
+      out << std::fixed << std::setprecision(2) <<  V.arr[i];
+      out << "\n";
     }
-    out << "\n";
     return out;
   }
 };
@@ -420,3 +416,4 @@ void vector::print()
   }
   printf("\n");
 }
+
