@@ -183,10 +183,12 @@ class vector  // similar stuff for vector
   }
 
   friend std::ostream & operator << (std::ostream &out, const vector &V){
-    
-    for(int i=0; i < V.dim; i++){
+    if(V.mysimpi->get_id() == 0){
+      for(int i=0; i < V.dim; i++){
       out << std::fixed << std::setprecision(2) <<  V.arr[i];
       out << "\n";
+      }
+      return out;
     }
     return out;
   }
