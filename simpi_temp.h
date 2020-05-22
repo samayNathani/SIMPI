@@ -173,6 +173,9 @@ class vector  // similar stuff for vector
   void set(int pos, double val) { arr[pos] = val; }
   double& get(int pos) { return arr[pos]; }
   vector& scalar_vector_mult(int other);
+  vector& add(vector other);
+  vector& subtract(vector other);
+  bool vector_is_equal(vector other);
   void print();
   vector(simpi& simp, int a)  // constructor
   {
@@ -687,6 +690,43 @@ vector& vector::scalar_vector_mult(int scaler){
 
 }
 
+vector& vector::add(vector other){
+  vector* result = new vector(*mysimpi, get_size());
+  int size = get_size();
+  int rpp = size / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+    result->set(i, get(i) + other.get(i));
+  }
+  return *result;
+}
+
+vector& vector::subtract(vector other){
+  vector* result = new vector(*mysimpi, get_size());
+  int size = get_size();
+  int rpp = size / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+    result->set(i, get(i) - other.get(i));
+  }
+  return *result;
+}
+
+bool vector::vector_is_equal(vector other){
+  int size = get_size();
+  int rpp = size / mysimpi->get_synch_info()->par_count;
+  int start = rpp * mysimpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++) {
+   if (get(i) != other.get(i))
+      {return false;}
+}
+return true;
+}
+
+//Multiplication
 matrix &operator*(matrix &lhs,matrix &rhs)
 {
 return lhs.multiply(rhs);
@@ -707,7 +747,27 @@ vector &operator*(vector &lhs, int rhs)
 {
 return lhs.scalar_vector_mult(rhs);
 }
+
+//*=
+void operator*=(matrix &lhs,matrix &rhs)
+{
+lhs = lhs.multiply(rhs);
+}
+void operator*=(matrix &lhs, int rhs)
+{
+ lhs = lhs.scalar_matrix_mult(rhs);
+}
+void operator*=(vector &lhs, int rhs)
+{
+lhs = lhs.scalar_vector_mult(rhs);
+}
+
+//Adition
 matrix &operator+(matrix &lhs,matrix &rhs)
+{
+return lhs.add(rhs);
+}
+vector &operator+(vector &lhs, vector& rhs)
 {
 return lhs.add(rhs);
 }
@@ -715,7 +775,15 @@ void operator+=(matrix &lhs,matrix &rhs)
 {
 lhs =  lhs.add(rhs);
 }
+void operator+=(vector &lhs,vector &rhs)
+{
+lhs =  lhs.add(rhs);
+}
 void operator-=(matrix &lhs,matrix &rhs)
+{
+lhs =  lhs.subtract(rhs);
+}
+void operator-=(vector &lhs,vector &rhs)
 {
 lhs =  lhs.subtract(rhs);
 }
@@ -723,8 +791,16 @@ matrix &operator-(matrix &lhs,matrix &rhs)
 {
 return lhs.subtract(rhs);
 }
+vector &operator-(vector &lhs,vector &rhs)
+{
+return lhs.subtract(rhs);
+}
 bool operator==( matrix &lhs,matrix &rhs)
 {
 return lhs.matrix_is_equal(rhs);
+}
+bool operator==( vector &lhs,vector &rhs)
+{
+return lhs.vector_is_equal(rhs);
 }
 
