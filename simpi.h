@@ -442,7 +442,7 @@ void matrix::solveSystem(vector* constants, vector* solution) {
             get(i, j) /= constants->get(i);
             mysimpi->synch();
         }
-        prev->get(i) = 1.0;
+        prev->get(i) = 0.0;
         solution->get(i) = constants->get(i);
         mysimpi->synch();
     }
@@ -460,7 +460,6 @@ void matrix::solveSystem(vector* constants, vector* solution) {
             mysimpi->synch();
         }
         solution->get(i) = rowSum;
-        std::cout << rowSum << std::endl;
         mysimpi->synch();
     }
 
@@ -473,12 +472,17 @@ void matrix::solveSystem(vector* constants, vector* solution) {
         {
             //save prev value for comparision
             prev->get(i) = solution->get(i);
+            mysimpi->synch();
+        }
+        for (i = start; i < end; i++)
+        {
+            //save prev value for comparision
+            //prev->get(i) = solution->get(i);
             double rowSum = 0;
             for (j = 0; j < get_y(); j++)
             {
                 if (j == i) {
                     rowSum += get(i, j);
-                    //std::cout << "get(i, j): " << get(i, j) << std::endl;
                 } else {
                     rowSum += (get(i, j) * prev->get(j));
                 }
