@@ -3,12 +3,21 @@
 static simpi* main_simpi;
 
 // simpi init function
-void INIT_SIMPI(int par_id, size_t synch_size)
+void SIMPI_INIT(int par_id, size_t synch_size)
 {
-  printf("simpi: %d\n", main_simpi->get_id());
-  *main_simpi = simpi(par_id, synch_size);
+  main_simpi = new simpi(par_id, synch_size);
 }
-// simpi shutdown?
+// simpi synch
+void SIMPI_SYNCH()
+{
+  main_simpi->synch();
+}
+
+void SIMPI_FINALIZE()
+{
+  main_simpi->synch();
+  delete main_simpi;
+}
 
 /******************Simpi Functions*************************/
 void simpi::synch()
