@@ -20,16 +20,19 @@ void SIMPI_FINALIZE()
 }
 
 /******************Simpi Functions*************************/
-simpi::simpi(int id_, size_t synch_size)
+simpi::simpi(int _id, int _num_workers)
 {
-  id = id_;
+  id = _id;
+  num_workers = _num_workers;
+  size_t synchObjectSize =
+      sizeof(synch_object) + sizeof(int) * (num_workers + 1);
   int fd = shm_open(SYNCH_OBJECT_MEM_NAME, O_RDWR, 0777);
   if (fd == -1) {
     perror("Unable to shm_open synch_object: ");
     exit(1);
   }
-  synch_info = (synch_object*)mmap(NULL, synch_size, PROT_READ | PROT_WRITE,
-                                   MAP_SHARED, fd, 0);
+  synch_info = (synch_object*)mmap(NULL, synchObjectSize,
+                                   PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (synch_info == MAP_FAILED) {
     perror("Unable to mmap synch_info: ");
     exit(1);

@@ -32,9 +32,10 @@ void SIMPI_FINALIZE();
 
 class simpi {
  public:
-  simpi(int id_, size_t synch_size);
+  simpi(int _id, int _num_workers);
   ~simpi();
   int get_id() { return id; }
+  int get_num_workers() { return num_workers; }
   synch_object* get_synch_info() { return synch_info; }
 
   std::pair<std::string, double*> create_matrix(int x, int y);
@@ -44,6 +45,7 @@ class simpi {
 
  private:
   int id;
+  int num_workers;
   synch_object* synch_info;
   std::map<std::string, matrix_metadata> matrix_info;
   std::string sync_shared_mem_name;
