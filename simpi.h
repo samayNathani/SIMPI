@@ -32,28 +32,8 @@ void SIMPI_FINALIZE();
 
 class simpi {
  public:
-  simpi(int id_, size_t synch_size)
-  {
-    id = id_;
-    int fd = shm_open(SYNCH_OBJECT_MEM_NAME, O_RDWR, 0777);
-    if (fd == -1) {
-      perror("Unable to shm_open synch_object: ");
-      exit(1);
-    }
-    synch_info = (synch_object*)mmap(NULL, synch_size, PROT_READ | PROT_WRITE,
-                                     MAP_SHARED, fd, 0);
-    if (synch_info == MAP_FAILED) {
-      perror("Unable to mmap synch_info: ");
-      exit(1);
-    }
-  }
-  ~simpi()
-  {
-    for (std::pair<std::string, matrix_metadata> matrix : matrix_info) {
-      free_matrix(matrix.second.unique_id);
-    }
-    shm_unlink(SYNCH_OBJECT_MEM_NAME);
-  }
+  simpi(int id_, size_t synch_size);
+  ~simpi();
   int get_id() { return id; }
   synch_object* get_synch_info() { return synch_info; }
 
