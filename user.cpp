@@ -17,19 +17,20 @@ void segfault_printer(int dummy)
 
 int main(int argc, char* argv[])
 {
+  signal(SIGSEGV, segfault_printer);
   par_id = atoi(argv[1]);
   int synch_size = atoi(argv[2]);
-  simpi my_simpi(par_id, synch_size);
-  matrix A(my_simpi, MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
-  vector C(my_simpi, 10);
-  my_simpi.synch();
+  SIMPI_INIT(par_id, synch_size);
+  matrix A(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
+  vector C(10);
+  SIMPI_SYNCH();
 
   for (int y = 0; y < MATRIX_DIMENSION_Y; y++) {
     for (int x = 0; x < MATRIX_DIMENSION_X; x++) {
       A.get(x, y) = (double)x + y;
     }
   }
-  A.print();
-  puts("\n");
-  C.print();
+  SIMPI_SYNCH();
+  printf("%.2f\n", A.get(1, 1));
+  SIMPI_FINALIZE();
 }
