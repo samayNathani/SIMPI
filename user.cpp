@@ -19,8 +19,8 @@ int main(int argc, char* argv[])
 {
   signal(SIGSEGV, segfault_printer);
   par_id = atoi(argv[1]);
-  int synch_size = atoi(argv[2]);
-  SIMPI_INIT(par_id, synch_size);
+  int num_workers = atoi(argv[2]);
+  SIMPI_INIT(par_id, num_workers);
   matrix A(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
   vector C(10);
   SIMPI_SYNCH();
