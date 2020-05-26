@@ -128,11 +128,24 @@ std::string simpi::get_shared_mem_name()
   return name;
 }
 /******************Matrix Functions*************************/
-
+matrix::matrix(int x, int y)  // constructor
+{
+  // use main_simp init the matrix for all processes. The id is also in simp
+  std::pair<std::string, double*> pass_back(main_simpi->create_matrix(x, y));
+  unique_id = pass_back.first;
+  arr = pass_back.second;
+  xdim = x;
+  ydim = y;
+}
+matrix::~matrix()  // destructor
+{
+  // use main_simpi for getting rid of the mem and unlink stuff
+  main_simpi->free_matrix(unique_id);
+}
 matrix& matrix::inverse()
 {
-  matrix* inverse = new matrix(*main_simpi, xdim, ydim);
-  matrix* adj = new matrix(*main_simpi, xdim, ydim);
+  matrix* inverse = new matrix(xdim, ydim);
+  matrix* adj = new matrix(xdim, ydim);
 
   // Find determinant of A[][]
   int det = determinant(arr, xdim, xdim);
@@ -247,17 +260,14 @@ void matrix::solveSystem(vector* constants, vector* solution)
   int processCount = main_simpi->get_synch_info()->par_count;
   int id = main_simpi->get_id();
 
-  // TODO: initialize shared memory if id is 0
-  vector* prev = new vector(
-      *main_simpi,
-      constants->get_size());  // shared mem containing a copy of values
+  // shared mem containing a copy of values
+  vector* prev = new vector(constants->get_size());
   // vector *solution = new vector(*main_simpi, constants->get_size()); //
   // shared mem containing actual calculated values
 
-  matrix* saveEq = new matrix(*main_simpi, get_x(),
-                              get_y());  // save equations from modification
-  vector* saveConst =
-      new vector(*main_simpi, constants->get_size());  // saves input vector
+  // save equations from modification
+  matrix* saveEq = new matrix(get_x(), get_y());
+  vector* saveConst = new vector(constants->get_size());  // saves input vector
 
   // divide up work
   int n = constants->get_size();
@@ -354,4 +364,19 @@ void matrix::solveSystem(vector* constants, vector* solution)
   // wait for all processes before returning solution vector
   main_simpi->synch();
   // return solution;
+}
+
+/******************Vector Functions*************************/
+vector::vector(int a)
+{
+  // use simp and init the matrix for all processes. The id is also in simp
+  std::pair<std::string, double*> pass_back(main_simpi->create_matrix(1, a));
+  unique_id = pass_back.first;
+  arr = pass_back.second;
+  dim = a;
+}
+vector::~vector()  // destructor
+{
+  // use main_simpi for getting rid of the mem and unlink stuff
+  main_simpi->free_matrix(unique_id);
 }

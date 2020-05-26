@@ -81,20 +81,8 @@ class vector  // similar stuff for vector
   void set(int pos, double val) { arr[pos] = val; }
   double& get(int pos) { return arr[pos]; }
   void print();
-  vector(simpi& simp, int a)  // constructor
-  {
-    // use simp and init the matrix for all processes. The id is also in simp
-    mysimpi = &simp;
-    std::pair<std::string, double*> pass_back(mysimpi->create_matrix(1, a));
-    unique_id = pass_back.first;
-    arr = pass_back.second;
-    dim = a;
-  }
-  ~vector()  // destructor
-  {
-    // use mysimpi for getting rid of the mem and unlink stuff
-    mysimpi->free_matrix(unique_id);
-  }
+  vector(int a);
+  ~vector();
 };
 
 class matrix  // similar stuff for vector
@@ -105,6 +93,8 @@ class matrix  // similar stuff for vector
   simpi* mysimpi = NULL;  // for later reference
  public:
   double* arr;
+  matrix(int x, int y);
+  ~matrix();
   void print();
   int get_x() { return xdim; }
   int get_y() { return ydim; }
@@ -115,20 +105,6 @@ class matrix  // similar stuff for vector
   void set(int pos, int val) { arr[pos] = val; }
   matrix& inverse();
   void solveSystem(vector* constants, vector* solution);
-  matrix(simpi& simp, int x, int y)  // constructor
-  {
-    // use simp and init the matrix for all processes. The id is also in simp
-    mysimpi = &simp;
-    std::pair<std::string, double*> pass_back(mysimpi->create_matrix(x, y));
-    unique_id = pass_back.first;
-    arr = pass_back.second;
-    xdim = x;
-    ydim = y;
-  }
-  ~matrix()  // destructor
-  {
-    // use mysimpi for getting rid of the mem and unlink stuff
-    mysimpi->free_matrix(unique_id);
-  }
+
   double& get(int x, int y) { return arr[x + y * xdim]; }
 };
