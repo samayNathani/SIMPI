@@ -47,21 +47,20 @@ simpi::~simpi()
 }
 void simpi::synch()
 {
-  int par_count = synch_info->par_count;
   int* ready = synch_info->ready;
-  int synchid = ready[par_count] + 1;
+  int synchid = ready[num_workers] + 1;
   ready[id] = synchid;
   int breakout = 0;
   while (1) {
     breakout = 1;
-    for (int i = 0; i < par_count; i++) {
+    for (int i = 0; i < num_workers; i++) {
       if (ready[i] < synchid) {
         breakout = 0;
         break;
       }
     }
     if (breakout == 1) {
-      ready[par_count] = synchid;
+      ready[num_workers] = synchid;
       // and here we increment the additional variable
       break;
     }
