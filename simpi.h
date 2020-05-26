@@ -25,6 +25,9 @@ typedef struct synch_object {
   int ready[];
 } synch_object;
 
+// static methods
+void INIT_SIMPI(int par_id, size_t synch_size);
+
 class simpi {
  public:
   simpi(int id_, size_t synch_size)
