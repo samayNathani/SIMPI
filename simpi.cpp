@@ -175,6 +175,26 @@ matrix::~matrix()  // destructor
   // use main_simpi for getting rid of the mem and unlink stuff
   main_simpi->free_matrix(unique_id);
 }
+
+std::ostream & operator << (std::ostream &out, const matrix &m){
+    if(main_simpi->get_id()==0){
+      for(int i=0; i < m.xdim; i++){
+        out << "\n";
+        for(int j=0; j < m.ydim; j++){
+          out << std::fixed << std::setprecision(2) <<  m.arr[i + j * m.xdim];
+          out << ", ";
+        }
+      }
+      out << "\n";
+      return out;
+    }
+    else{
+      return out; 
+    }
+   
+    
+  }
+
 matrix& matrix::inverse()
 {
   matrix* inverse = new matrix(xdim, ydim);
@@ -199,6 +219,7 @@ matrix& matrix::inverse()
 
   return *inverse;
 }
+
 
 int matrix::determinant(double* A, int n, int order)
 {

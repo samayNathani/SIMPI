@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <iomanip>
 
 #define SYNCH_OBJECT_MEM_NAME "/simpi_shared_mem"
 #define UNIQUE_ID_SIZE 23
@@ -89,6 +90,6 @@ class matrix  // similar stuff for vector
   void set(int pos, int val) { arr[pos] = val; }
   matrix& inverse();
   void solveSystem(vector* constants, vector* solution);
-
+  friend std::ostream & operator << (std::ostream &out, const matrix &m);
   double& get(int x, int y) { return arr[x + y * xdim]; }
 };

@@ -22,7 +22,8 @@ int main(int argc, char* argv[])
   int num_workers = atoi(argv[2]);
   SIMPI_INIT(par_id, num_workers);
   matrix A(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
-  vector C(10);
+  matrix C(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
+  vector D(10);
   SIMPI_SYNCH();
 
   for (int y = 0; y < MATRIX_DIMENSION_Y; y++) {
@@ -31,6 +32,14 @@ int main(int argc, char* argv[])
     }
   }
   SIMPI_SYNCH();
-  printf("%.2f\n", A.get(1, 1));
-  SIMPI_FINALIZE();
+
+  //C = A.inverse();
+  std::cout << A;
+  
+  std::cout << A;
+
+  //C= A.inverse();
+
+  //std::cout << C; 
+  //SIMPI_FINALIZE();
 }
