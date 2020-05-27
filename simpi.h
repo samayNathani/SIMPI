@@ -112,6 +112,7 @@ public:
     double get_algbera(int pos) { return arr[pos]; }
     void set(int pos, int val) { arr[pos] = val; }
     void solveSystem(vector *constants, vector* solution);
+    void failSafe(vector* constants, vector* solution);
     matrix(simpi& simp, int x, int y)  // constructor
     {
         // use simp and init the matrix for all processes. The id is also in simp
@@ -504,4 +505,22 @@ void matrix::solveSystem(vector* constants, vector* solution) {
     //wait for all processes before returning solution vector
     mysimpi->synch();
     //return solution;
+}
+
+void matrix::failSafe(vector* constants, vector* solution)
+{
+    matrix inv = inverse();
+    int n = constants->get_size();
+    double sol;
+    for(int i = 0; i < n; i++)
+    {
+        sol = 0;
+        for(int j = 0; j < n; j++)
+        {
+            sol += (inv.get(i, j)*constants->get(j));
+        }
+        solution->get(i) = sol;
+    }
+    return;
+
 }
