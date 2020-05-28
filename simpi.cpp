@@ -31,6 +31,7 @@ simpi::simpi(int _id, int _num_workers)
     perror("Unable to shm_open synch_object: ");
     exit(1);
   }
+  shm_fd = fd;
   synch_info = (synch_object*)mmap(NULL, synchObjectSize,
                                    PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (synch_info == MAP_FAILED) {
@@ -44,6 +45,7 @@ simpi::~simpi()
     free_matrix(matrix.second.unique_id);
   }
   shm_unlink(SYNCH_OBJECT_MEM_NAME);
+  close(shm_fd);
 }
 void simpi::synch()
 {
@@ -176,24 +178,23 @@ matrix::~matrix()  // destructor
   main_simpi->free_matrix(unique_id);
 }
 
-std::ostream & operator << (std::ostream &out, const matrix &m){
-    if(main_simpi->get_id()==0){
-      for(int i=0; i < m.xdim; i++){
-        out << "\n";
-        for(int j=0; j < m.ydim; j++){
-          out << std::fixed << std::setprecision(2) <<  m.arr[i + j * m.xdim];
-          out << ", ";
-        }
-      }
+std::ostream& operator<<(std::ostream& out, const matrix& m)
+{
+  if (main_simpi->get_id() == 0) {
+    for (int i = 0; i < m.xdim; i++) {
       out << "\n";
-      return out;
+      for (int j = 0; j < m.ydim; j++) {
+        out << std::fixed << std::setprecision(2) << m.arr[i + j * m.xdim];
+        out << ", ";
+      }
     }
-    else{
-      return out; 
-    }
-   
-    
+    out << "\n";
+    return out;
   }
+  else {
+    return out;
+  }
+}
 
 matrix& matrix::inverse()
 {
@@ -219,7 +220,6 @@ matrix& matrix::inverse()
 
   return *inverse;
 }
-
 
 int matrix::determinant(double* A, int n, int order)
 {

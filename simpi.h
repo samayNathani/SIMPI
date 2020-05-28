@@ -5,11 +5,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
-#include <iomanip>
 
 #define SYNCH_OBJECT_MEM_NAME "/simpi_shared_mem"
 #define UNIQUE_ID_SIZE 23
@@ -47,6 +47,7 @@ class simpi {
  private:
   int id;
   int num_workers;
+  int shm_fd;
   synch_object* synch_info;
   std::map<std::string, matrix_metadata> matrix_info;
   std::string sync_shared_mem_name;
@@ -90,6 +91,6 @@ class matrix  // similar stuff for vector
   void set(int pos, int val) { arr[pos] = val; }
   matrix& inverse();
   void solveSystem(vector* constants, vector* solution);
-  friend std::ostream & operator << (std::ostream &out, const matrix &m);
+  friend std::ostream& operator<<(std::ostream& out, const matrix& m);
   double& get(int x, int y) { return arr[x + y * xdim]; }
 };
