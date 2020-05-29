@@ -47,14 +47,11 @@ int main(int argc, char* argv[])
     shared_mem->ready[i] = 0;
   }
   shared_mem->par_count = numWorkers;
-
   for (int i = 0; i < numWorkers; i++) {
-    char workerID[3];
-    std::string size = std::to_string(synchObjectSize);
-    char size_cstring[size.size() + 1];
-    strcpy(size_cstring, size.c_str());
-    sprintf(workerID, "%d", i);
-    char* args[] = {progname, workerID, size_cstring, NULL};
+    std::string worker_count_str = std::to_string(numWorkers);
+    std::string worker_id_str = std::to_string(i);
+    char* args[] = {progname, const_cast<char*>(worker_id_str.c_str()),
+                    const_cast<char*>(worker_count_str.c_str()), NULL};
     if (fork() == 0) {
       execv(progname, args);
     }
