@@ -420,6 +420,21 @@ void matrix::solveSystem(vector* constants, vector* solution)
   // return solution;
 }
 
+void matrix::failSafe(vector* constants, vector* solution)
+{
+  matrix inv = inverse();
+  int n = constants->get_size();
+  double sol;
+  for (int i = 0; i < n; i++) {
+    sol = 0;
+    for (int j = 0; j < n; j++) {
+      sol += (inv.get(i, j) * constants->get(j));
+    }
+    solution->get(i) = sol;
+  }
+  return;
+}
+
 /******************Vector Functions*************************/
 vector::vector(int a)
 {
