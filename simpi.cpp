@@ -2,12 +2,20 @@
 // init global simpi
 static simpi* main_simpi;
 
-// simpi init function
+// user methods for simpi functions
 void SIMPI_INIT(int par_id, size_t synch_size)
 {
   main_simpi = new simpi(par_id, synch_size);
 }
-// simpi synch
+
+void SIMPI_GET_SIZE()
+{
+  main_simpi->get_num_workers();
+}
+void SIMPI_GET_ID()
+{
+  main_simpi->get_id();
+}
 void SIMPI_SYNCH()
 {
   main_simpi->synch();
