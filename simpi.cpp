@@ -8,13 +8,13 @@ void SIMPI_INIT(int par_id, size_t synch_size)
   main_simpi = new simpi(par_id, synch_size);
 }
 
-void SIMPI_GET_SIZE()
+int SIMPI_GET_SIZE()
 {
-  main_simpi->get_num_workers();
+  return main_simpi->get_num_workers();
 }
-void SIMPI_GET_ID()
+int SIMPI_GET_ID()
 {
-  main_simpi->get_id();
+  return main_simpi->get_id();
 }
 void SIMPI_SYNCH()
 {
