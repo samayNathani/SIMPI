@@ -32,14 +32,15 @@ int main(int argc, char* argv[])
     }
   }
   SIMPI_SYNCH();
-
-  //C = A.inverse();
+  std::cout << " size: " << SIMPI_GET_SIZE() << " id: " << SIMPI_GET_ID()
+            << std::endl;
+  // C = A.inverse();
   std::cout << A;
-  
+
   std::cout << A;
 
-  //C= A.inverse();
+  // C= A.inverse();
 
-  //std::cout << C; 
-  //SIMPI_FINALIZE();
+  // std::cout << C;
+  // SIMPI_FINALIZE();
 }
