@@ -91,7 +91,9 @@ class matrix  // similar stuff for vector
   void set(int pos, int val) { arr[pos] = val; }
   matrix& inverse();
   void solveSystem(vector* constants, vector* solution);
+  void jacobi(vector* constants, vector* solution);
   void failSafe(vector* constants, vector* solution);
+  bool isDiagonallyDominant();
   friend std::ostream& operator<<(std::ostream& out, const matrix& m);
   double& get(int x, int y) { return arr[x + y * xdim]; }
 };

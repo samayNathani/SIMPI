@@ -309,130 +309,169 @@ void matrix::getCofactor(double* A,
   }
 }
 
-void matrix::solveSystem(vector* constants, vector* solution)
+void matrix::jacobi(vector* constants, vector* solution) {
+
+    int processCount = main_simpi->get_num_workers();
+    int id = main_simpi->get_id();
+
+    vector *prev = new vector(constants->get_size()); // shared mem containing a copy of values
+    //vector *solution = new vector(*main_simpi, constants->get_size()); // shared mem containing actual calculated values
+
+    matrix* saveEq = new matrix(get_x(), get_y() + 1); // save equations from modification
+    vector* saveConst = new vector(constants->get_size()); // saves input vector
+
+
+    int work = constants->get_size() / processCount;
+
+    int i, j, k;
+    int start = id * work;
+    int end = start + work;
+
+    main_simpi->synch();
+
+    //Save Matrix and Vector
+    for (i = start; i < end; i++) {
+        for (j = 0; j < get_y(); j++) {
+            saveEq->get(i,j) = get(i, j);
+        }
+        saveEq->get(i,get_y() + 1) = constants->get(i);
+        saveConst->get(i) = constants->get(i);
+    }
+
+    //synch, wait for all process before solving
+    main_simpi->synch();
+
+    //setup, switch var coefficient with row solution, and divide by coefficient
+    for (i = start; i < end; i++) {
+        double temp = get(i, i);
+        get(i, i) = constants->get(i);
+        constants->get(i) = temp;
+        for (j = 0; j < get_y(); j++) {
+            if (j != i) {
+                get(i, j) *= -1;
+            }
+            get(i, j) /= constants->get(i);
+            //main_simpi->synch();
+        }
+        prev->get(i) = 1.0;
+        solution->get(i) = constants->get(i);
+        main_simpi->synch();
+    }
+
+    main_simpi->synch();
+    // first iteration by trying substituting 1
+    for (i = start; i < end; i++) {
+        double rowSum = 0;
+        for (j = 0; j < get_y(); j++) {
+            if (j == i) {
+                rowSum += get(i, j);
+            } else {
+                rowSum += (get(i, j) * prev->get(j));
+            }
+            //main_simpi->synch();
+        }
+        solution->get(i) = rowSum;
+        main_simpi->synch();
+    }
+
+    //wait for all processes before repeating iterations with calculated results
+    //main_simpi->synch();
+
+    for (k = 0; k < 1000; k++)
+    {
+        for (i = start; i < end; i++)
+        {
+            //save prev value for comparision
+            prev->get(i) = solution->get(i);
+            main_simpi->synch();
+        }
+        for (i = start; i < end; i++)
+        {
+            double rowSum = 0;
+            for (j = 0; j < get_y(); j++)
+            {
+                if (j == i) {
+                    rowSum += get(i, j);
+                } else {
+                    rowSum += (get(i, j) * prev->get(j));
+                }
+            }
+            solution->get(i) = rowSum;
+            //main_simpi->synch();
+        }
+        //wait at end of each loop for all processes before beginning next iteration
+        main_simpi->synch();
+    }
+    main_simpi->synch();
+    //restore original matrix and vector
+    for (i = start; i < end; i++) {
+        for (j = 0; j < get_y(); j++) {
+            get(i, j) = saveEq->get(i,j);
+        }
+        constants->get(i) = saveConst->get(i);
+    }
+    //wait for all processes before returning solution vector
+    main_simpi->synch();
+    //return solution;
+    return;
+}
+
+bool matrix::isDiagonallyDominant()
 {
-  int processCount = main_simpi->get_num_workers();
-  int id = main_simpi->get_id();
-
-  // shared mem containing a copy of values
-  vector* prev = new vector(constants->get_size());
-  // vector *solution = new vector(*main_simpi, constants->get_size()); //
-  // shared mem containing actual calculated values
-
-  // save equations from modification
-  matrix* saveEq = new matrix(get_x(), get_y());
-  vector* saveConst = new vector(constants->get_size());  // saves input vector
-
-  // divide up work
-  int n = constants->get_size();
-
-  int work = n / processCount;
-  /*
-   * implement remainder?
-   */
-  int i, j, k;
-  int start = id * work;
-  int end = start + work;
-
-  // Save Matrix and Vector
-  for (i = start; i < end; i++) {
-    for (j = 0; j < get_y(); j++) {
-      saveEq->get(i, j) = get(i, j);
-    }
-    saveConst->get(i) = constants->get(i);
-  }
-
-  // synch, wait for all process before solving
-  main_simpi->synch();
-
-  // setup, switch var coefficient with row solution, and divide by coefficient
-  for (i = start; i < end; i++) {
-    double temp = get(i, i);
-    get(i, i) = constants->get(i);
-    constants->get(i) = temp;
-    for (j = 0; j < get_y(); j++) {
-      if (j != i) {
-        get(i, j) *= -1;
-      }
-      get(i, j) /= constants->get(i);
-      main_simpi->synch();
-    }
-    prev->get(i) = 0.0;
-    solution->get(i) = constants->get(i);
-    main_simpi->synch();
-  }
-
-  main_simpi->synch();
-  // first iteration by trying substituting 1
-  for (i = start; i < end; i++) {
-    double rowSum = 0;
-    for (j = 0; j < get_y(); j++) {
-      if (j == i) {
-        rowSum += get(i, j);
-      }
-      else {
-        rowSum += (get(i, j) * prev->get(j));
-      }
-      main_simpi->synch();
-    }
-    solution->get(i) = rowSum;
-    main_simpi->synch();
-  }
-
-  // wait for all processes before repeating iterations with calculated results
-  main_simpi->synch();
-
-  for (k = 0; k < 1000; k++) {
-    for (i = start; i < end; i++) {
-      // save prev value for comparision
-      prev->get(i) = solution->get(i);
-      main_simpi->synch();
-    }
-    for (i = start; i < end; i++) {
-      // save prev value for comparision
-      // prev->get(i) = solution->get(i);
-      double rowSum = 0;
-      for (j = 0; j < get_y(); j++) {
-        if (j == i) {
-          rowSum += get(i, j);
+        for(int i = 0; i < get_x(); i ++)
+        {
+            double sq;
+            double rest = 0;
+            for(int j = 0; j < get_y(); j++)
+            {
+                if(i==j)
+                {
+                    sq = get(i,j);
+                }
+                else
+                {
+                    rest+=get(i,j);
+                }
+            }
+            if (sq < rest)
+            {
+                return false;
+            }
         }
-        else {
-          rowSum += (get(i, j) * prev->get(j));
-        }
-      }
-      solution->get(i) = rowSum;
-      main_simpi->synch();
-    }
-    // wait at end of each loop for all processes before beginning next
-    // iteration
+        return true;
+}
+
+void matrix::solveSystem(vector *constants, vector* solution)
+{
+    bool dd = isDiagonallyDominant();
     main_simpi->synch();
-  }
-  main_simpi->synch();
-  // restore original matrix and vector
-  for (i = start; i < end; i++) {
-    for (j = 0; j < get_y(); j++) {
-      get(i, j) = saveEq->get(i, j);
+    if (dd)
+    {
+        jacobi(constants, solution);
     }
-    constants->get(i) = saveConst->get(i);
-  }
-  // wait for all processes before returning solution vector
-  main_simpi->synch();
-  // return solution;
+    else
+    {
+        failSafe(constants, solution);
+    }
+    main_simpi->synch();
 }
 
 void matrix::failSafe(vector* constants, vector* solution)
 {
-  matrix inv = inverse();
-  int n = constants->get_size();
-  double sol;
-  for (int i = 0; i < n; i++) {
-    sol = 0;
-    for (int j = 0; j < n; j++) {
-      sol += (inv.get(i, j) * constants->get(j));
+    matrix inv = inverse();
+    int n = constants->get_size();
+    double sol;
+    for(int i = 0; i < n; i++)
+    {
+        sol = 0;
+        for(int j = 0; j < n; j++)
+        {
+            sol += (inv.get(i, j)*constants->get(j));
+        }
+        solution->get(i) = sol;
     }
-    solution->get(i) = sol;
-  }
-  return;
+    mysimpi->synch();
+    return;
 }
 
 /******************Vector Functions*************************/
