@@ -21,7 +21,6 @@ typedef struct matrix_metadata {
 } matrix_metadata;
 
 typedef struct synch_object {
-  int par_count;
   char last_matrix_id[UNIQUE_ID_SIZE];
   int ready[];
 } synch_object;
@@ -38,7 +37,7 @@ class simpi {
   simpi(int _id, int _num_workers);
   ~simpi();
   int get_id() { return id; }
-  int get_num_workers() { return num_workers; }
+  int get_size() { return num_workers; }
   synch_object* get_synch_info() { return synch_info; }
 
   std::pair<std::string, double*> create_matrix(int x, int y);

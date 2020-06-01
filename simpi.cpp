@@ -10,7 +10,7 @@ void SIMPI_INIT(int par_id, size_t synch_size)
 
 int SIMPI_GET_SIZE()
 {
-  return main_simpi->get_num_workers();
+  return main_simpi->get_size();
 }
 int SIMPI_GET_ID()
 {
@@ -218,8 +218,7 @@ matrix& matrix::inverse()
   std::cout << "Determinant is: " << det;
   main_simpi->synch();
 
-  adjoint(arr, adj->arr, xdim, main_simpi->get_id(),
-          main_simpi->get_num_workers());
+  adjoint(arr, adj->arr, xdim, main_simpi->get_id(), main_simpi->get_size());
   main_simpi->synch();
 
   for (int i = 0; i < xdim; i++)
@@ -319,7 +318,7 @@ void matrix::getCofactor(double* A,
 
 void matrix::solveSystem(vector* constants, vector* solution)
 {
-  int processCount = main_simpi->get_num_workers();
+  int processCount = main_simpi->get_size();
   int id = main_simpi->get_id();
 
   // shared mem containing a copy of values

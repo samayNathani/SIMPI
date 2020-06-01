@@ -46,7 +46,6 @@ int main(int argc, char* argv[])
   for (int i = 0; i <= numWorkers; i++) {
     shared_mem->ready[i] = 0;
   }
-  shared_mem->par_count = numWorkers;
   for (int i = 0; i < numWorkers; i++) {
     std::string worker_count_str = std::to_string(numWorkers);
     std::string worker_id_str = std::to_string(i);
