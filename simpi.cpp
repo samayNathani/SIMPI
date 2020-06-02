@@ -459,20 +459,25 @@ void matrix::solveSystem(vector *constants, vector* solution)
 void matrix::failSafe(vector* constants, vector* solution)
 {
     matrix inv = inverse();
-    int n = constants->get_size();
-    double sol;
-    for(int i = 0; i < n; i++)
+    main_simpi->synch();
+    if (main_simpi->get_id() == 0)
     {
-        sol = 0;
-        for(int j = 0; j < n; j++)
-        {
-            sol += (inv.get(i, j)*constants->get(j));
-        }
-        solution->get(i) = sol;
+      int n = constants->get_size();
+      double sol;
+      for(int i = 0; i < n; i++)
+      {
+          sol = 0;
+          for(int j = 0; j < n; j++)
+          {
+              sol += (inv.get(i, j)*constants->get(j));
+          }
+          solution->get(i) = sol;
+      }
     }
-    mysimpi->synch();
+    main_simpi->synch();
     return;
 }
+
 
 /******************Vector Functions*************************/
 vector::vector(int a)
