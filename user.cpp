@@ -21,9 +21,11 @@ int main(int argc, char* argv[])
   par_id = atoi(argv[1]);
   int num_workers = atoi(argv[2]);
   SIMPI_INIT(par_id, num_workers);
-   printf("YES I AM STUPID\n");
+  //  printf("YES I AM STUPID\n");
+  //  printf("ProcessId = %d\n", par_id);
   matrix A(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
-   printf("YES I AM STUPID\n");
+  //  printf("YES I AM STUPID\n");
+  matrix B(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
   matrix C(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
   vector D(10);
   SIMPI_SYNCH();
@@ -36,14 +38,15 @@ int main(int argc, char* argv[])
   SIMPI_SYNCH();
 
   //C = A.inverse();
-  printf("YES I AM STUPID\n");
+  // printf("YES I AM STUPID\n");
   std::cout << A;
   SIMPI_SYNCH();
-  
-  // std::cout << A;
+  // B = A.multiply(C);
+  B = multiply(A, C);
+  std::cout << A;
+  // std::cout << B;
+  // C= A.inverse();
 
-  //C= A.inverse();
-
-  //std::cout << C; 
+  std::cout << B; 
   //SIMPI_FINALIZE();
 }
