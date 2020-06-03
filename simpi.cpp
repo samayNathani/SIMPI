@@ -603,7 +603,6 @@ matrix &matrix::transpose()
 {
   matrix *result = new matrix(get_y(), get_x());
   int number_of_processes = main_simpi->get_synch_info()->par_count;
-  int parId = main_simpi->get_id();
 
   if (number_of_processes > get_x())
   {
@@ -697,9 +696,6 @@ matrix &matrix::subtract(matrix other)
   }
 
   int Arow = get_x();
-  int Acol = get_y();
-  int Brow = other.get_x();
-  int Bcol = other.get_y();
   int rpp = Arow / number_of_processes;
   int start = rpp * main_simpi->get_id();
   int end = start + rpp;
@@ -737,9 +733,7 @@ matrix &matrix::scalar_matrix_mult(int scaler)
 {
   matrix *result = new matrix( get_x(), get_y());
 
-  int size = get_x();
   int number_of_processes = main_simpi->get_synch_info()->par_count;
-  int parId = main_simpi->get_id();
 
   if (number_of_processes > get_x())
   {
@@ -764,7 +758,6 @@ matrix &matrix::scalar_matrix_mult(int scaler)
 bool matrix::matrix_is_equal(matrix other)
 {
   int number_of_processes = main_simpi->get_synch_info()->par_count;
-  int parId = main_simpi->get_id();
 
   if (number_of_processes > get_x())
   {
