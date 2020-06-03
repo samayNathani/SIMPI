@@ -104,6 +104,24 @@ public:
 	void failSafe(vector *constants, vector *solution);
 	bool isDiagonallyDominant();
 	friend std::ostream &operator<<(std::ostream &out, const matrix &m);
+	friend matrix &operator*(matrix &lhs, matrix &rhs);
+	friend matrix &operator*(int lhs, matrix &rhs);
+	friend matrix &operator*(matrix &lhs, int rhs);
+	friend vector &operator*(int lhs, vector &rhs);
+	friend vector &operator*(vector &lhs, int rhs);
+	friend void operator*=(matrix &lhs, matrix &rhs);
+	friend void operator*=(matrix &lhs, int rhs);
+	friend void operator*=(vector &lhs, int rhs);
+	friend matrix &operator+(matrix &lhs, matrix &rhs);
+	friend vector &operator+(vector &lhs, vector &rhs);
+	friend void operator+=(matrix &lhs, matrix &rhs);
+	friend void operator+=(vector &lhs, vector &rhs);
+	friend void operator-=(matrix &lhs, matrix &rhs);
+	friend void operator-=(vector &lhs, vector &rhs);
+	friend matrix &operator-(matrix &lhs, matrix &rhs);
+	friend vector &operator-(vector &lhs, vector &rhs);
+	friend bool operator==(matrix &lhs, matrix &rhs);
+	friend bool operator==(vector &lhs, vector &rhs);
 	double &get(int x, int y) { return arr[x + y * xdim]; }
   matrix &multiply(matrix other);
   matrix &add(matrix other);

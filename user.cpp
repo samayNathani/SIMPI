@@ -23,10 +23,10 @@ int main(int argc, char* argv[])
   SIMPI_INIT(par_id, num_workers);
   //  printf("YES I AM STUPID\n");
   //  printf("ProcessId = %d\n", par_id);
-  matrix A(8, 3);
+  matrix A(8, 8);
   //  printf("YES I AM STUPID\n");
-  matrix B(8, 3);
-  matrix C(8, 3);
+  matrix B(3, 8);
+  matrix C(8, 8);
   vector D(10);
   SIMPI_SYNCH();
   int c = 100;
@@ -52,12 +52,12 @@ int main(int argc, char* argv[])
   std::cout << B;
   SIMPI_SYNCH();
   // B = A.multiply(C);
-  C = A.add(B);
+  A*= A;
   SIMPI_SYNCH();
   // std::cout << A;
   // std::cout << B;
   // C= A.inverse();
 
-  std::cout << C; 
+  std::cout << A; 
   //SIMPI_FINALIZE();
 }
