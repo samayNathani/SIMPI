@@ -72,10 +72,10 @@ public:
 	void print();
 	vector(int a);
   simpi *get_simpi() { return mysimpi; }
-//    vector &scalar_vector_mult(int other);
-//   vector &add(vector A, vector B);
-//   vector &subtract(vector A, vector B);
-//   bool vector_is_equal(vector A, vector B);
+   vector &scalar_vector_mult(int other);
+  vector &add( vector other);
+  vector &subtract(vector other);
+  bool vector_is_equal(vector other);
 	~vector();
 };
 
@@ -105,11 +105,12 @@ public:
 	bool isDiagonallyDominant();
 	friend std::ostream &operator<<(std::ostream &out, const matrix &m);
 	double &get(int x, int y) { return arr[x + y * xdim]; }
-  matrix &multiply(matrix A, matrix B);
-  matrix &add(matrix A, matrix B);
-  matrix &scalar_matrix_mult(matrix A, int other);
-  matrix &subtract(matrix A, matrix B);
-  matrix &transpose(matrix A);
-  bool matrix_is_equal(matrix A, matrix B);
+  matrix &multiply(matrix other);
+  matrix &add(matrix other);
+  matrix &scalar_matrix_mult( int other);
+  matrix &subtract(matrix other);
+  matrix &transpose();
+  bool matrix_is_equal(matrix other);
 };
+
 

@@ -23,30 +23,41 @@ int main(int argc, char* argv[])
   SIMPI_INIT(par_id, num_workers);
   //  printf("YES I AM STUPID\n");
   //  printf("ProcessId = %d\n", par_id);
-  matrix A(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
+  matrix A(8, 3);
   //  printf("YES I AM STUPID\n");
-  matrix B(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
-  matrix C(MATRIX_DIMENSION_X, MATRIX_DIMENSION_Y);
+  matrix B(8, 3);
+  matrix C(8, 3);
   vector D(10);
   SIMPI_SYNCH();
-  
-  for (int y = 0; y < MATRIX_DIMENSION_Y; y++) {
-    for (int x = 0; x < MATRIX_DIMENSION_X; x++) {
-      A.get(x, y) = (double)x + y;
+  int c = 100;
+  for (int y = 0; y < A.get_y(); y++) {
+    for (int x = 0; x < A.get_x(); x++) {
+      A.set(x + y * A.get_x(), c++);
     }
   }
+
+
+  c = 0;
+  for (int y = 0; y < B.get_y(); y++) {
+    for (int x = 0; x < B.get_x(); x++) {
+      B.set(x + y * B.get_x(), c++);
+    }
+  }
+ 
   SIMPI_SYNCH();
 
   //C = A.inverse();
   // printf("YES I AM STUPID\n");
   std::cout << A;
+  std::cout << B;
   SIMPI_SYNCH();
   // B = A.multiply(C);
-  B = multiply(A, C);
-  std::cout << A;
+  C = A.add(B);
+  SIMPI_SYNCH();
+  // std::cout << A;
   // std::cout << B;
   // C= A.inverse();
 
-  std::cout << B; 
+  std::cout << C; 
   //SIMPI_FINALIZE();
 }

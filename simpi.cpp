@@ -534,3 +534,404 @@ vector::~vector() // destructor
 	main_simpi->free_matrix(unique_id);
 }
 
+matrix &matrix::multiply(matrix other)
+{
+  matrix *result = new matrix(xdim, other.get_y());
+  int number_of_processes = main_simpi->get_synch_info()->par_count;
+  int parId = main_simpi->get_id();
+  if (number_of_processes > other.get_y())
+  {
+    number_of_processes = other.get_y();
+  }
+  int Arow = get_x();
+  int Acol = get_y();
+  int Brow = other.get_x();
+  int Bcol = other.get_y();
+  int rpp = Bcol / number_of_processes;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+  if (Arow % number_of_processes != 0)
+  {
+
+    int leftover = Arow % number_of_processes;
+    if (parId < leftover)
+    {
+
+      parId += (Arow - leftover);
+      int start = parId;
+      int end = start + 1;
+      for (int a = start; a < end; a++)
+      {
+        for (int b = 0; b < Arow; b++)
+        {
+          int sum = 0;
+          for (int c = 0; c < Brow; c++)
+          {
+            sum = sum + other.get_algbera(c + a * Brow) * get_algbera(c * Arow + b);
+          }
+          result->set(a * Arow + b, sum);
+        }
+      }
+    }
+  }
+  if (Acol != Brow)
+  {
+    // Send error
+    printf("error");
+  }
+  //   main_simpi->synch();
+  //   main_simpi->synch();
+  printf("Start = %d\n", start);
+  printf("end = %d\n", end);
+  for (int a = start; a < end; a++)
+  {
+    for (int b = 0; b < Arow; b++)
+    {
+      int sum = 0;
+      for (int c = 0; c < Brow; c++)
+      {
+        sum = sum + other.get_algbera(c + a * Brow) * get_algbera(c * Arow + b);
+      }
+      result->set(a * Arow + b, sum);
+    }
+  }
+  main_simpi->synch();
+  return *result;
+}
+
+matrix &matrix::transpose()
+{
+  matrix *result = new matrix(get_y(), get_x());
+  int number_of_processes = main_simpi->get_synch_info()->par_count;
+  int parId = main_simpi->get_id();
+
+  if (number_of_processes > get_x())
+  {
+    number_of_processes = get_x();
+  }
+
+  int Arow = get_x();
+  int Acol = get_y();
+
+  int rpp = Arow / number_of_processes;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+
+  for (int i = start; i < end; i++)
+  {
+    for (int j = 0; j < Acol; j++)
+    {
+      // if(A[j*Arow + i] == 4){
+      //     printf("LESSS GOOO = %d\n", j+i*Arow);
+      // }
+      result->set(j + i * Acol, get_algbera(j * Arow + i));
+    }
+  }
+  return *result;
+}
+
+matrix &matrix::add(matrix other)
+{
+  matrix *result = new matrix( get_x(), get_y());
+
+  int number_of_processes = main_simpi->get_synch_info()->par_count;
+  int parId = main_simpi->get_id();
+
+  if (number_of_processes > get_x())
+  {
+    number_of_processes = get_x();
+  }
+
+  int Arow = get_x();
+  int Acol = get_y();
+  int Brow = other.get_x();
+  int Bcol = other.get_y();
+  int rpp = Arow / number_of_processes;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+
+  if (Arow != Brow || Acol != Bcol)
+  {
+    // raise error
+  }
+  if (get_x() % number_of_processes != 0)
+  {
+    int leftover = Arow % number_of_processes;
+    if (parId <= leftover)
+    {
+      parId += (Arow - leftover);
+      int start = parId;
+      int end = start + 1;
+      for (int i = start; i < end; i++)
+      {
+        for (int j = 0; j < Arow; j++)
+        {
+          result->set(j + i * Arow,
+                      (other.get_algbera(j + i * Arow) + get_algbera(j + i * Arow)));
+        }
+      }
+    }
+  }
+  for (int i = start; i < end; i++)
+  {
+    for (int j = 0; j < Arow; j++)
+    {
+      result->set(j + i * Arow,
+                  (other.get_algbera(j + i * Arow) + get_algbera(j + i * Arow)));
+    }
+  }
+  // printf("End of alg\n");
+  return *result;
+}
+
+matrix &matrix::subtract(matrix other)
+{
+  matrix *result = new matrix( get_x(), get_y());
+
+  int number_of_processes = main_simpi->get_synch_info()->par_count;
+  int parId = main_simpi->get_id();
+
+  if (number_of_processes > get_x())
+  {
+    number_of_processes = get_x();
+  }
+
+  int Arow = get_x();
+  int Acol = get_y();
+  int Brow = other.get_x();
+  int Bcol = other.get_y();
+  int rpp = Arow / number_of_processes;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+
+  if (get_x() % number_of_processes != 0)
+  {
+    int leftover = Arow % number_of_processes;
+    if (parId <= leftover)
+    {
+      parId += (Arow - leftover);
+      int start = parId;
+      int end = start + 1;
+      for (int i = start; i < end; i++)
+      {
+        for (int j = 0; j < Arow; j++)
+        {
+          result->set(j + i * Arow,
+                      (other.get_algbera(j + i * Arow) - get_algbera(j + i * Arow)));
+        }
+      }
+    }
+  }
+  for (int i = start; i < end; i++)
+  {
+    for (int j = 0; j < Arow; j++)
+    {
+      result->set(j + i * Arow,
+                  (other.get_algbera(j + i * Arow) - get_algbera(j + i * Arow)));
+    }
+  }
+  return *result;
+}
+
+matrix &matrix::scalar_matrix_mult(int scaler)
+{
+  matrix *result = new matrix( get_x(), get_y());
+
+  int size = get_x();
+  int number_of_processes = main_simpi->get_synch_info()->par_count;
+  int parId = main_simpi->get_id();
+
+  if (number_of_processes > get_x())
+  {
+    number_of_processes = get_x();
+  }
+
+  int rpp = get_y() / number_of_processes;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+
+  for (int i = start; i < end; i++)
+  {
+    for (int j = 0; j < get_y(); j++)
+    {
+      int pos = (get_y() * i + j);
+      result->set(pos, get_algbera(pos) * scaler);
+    }
+  }
+  return *result;
+}
+
+bool matrix::matrix_is_equal(matrix other)
+{
+  int number_of_processes = main_simpi->get_synch_info()->par_count;
+  int parId = main_simpi->get_id();
+
+  if (number_of_processes > get_x())
+  {
+    number_of_processes = get_x();
+  }
+
+  int Arow = get_x();
+  int Acol = get_y();
+  int Brow = other.get_x();
+  int Bcol = other.get_y();
+  int rpp = Arow / number_of_processes;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+
+  if (Arow != Brow || Acol != Bcol)
+  {
+    // error
+  }
+
+  for (int i = start; i < end; i++)
+  {
+    for (int j = 0; j < Acol; j++)
+    {
+
+      if (get_algbera(j + i * Acol) != other.get_algbera(j + i * Acol))
+      {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+vector &vector::scalar_vector_mult(int scaler)
+{
+  vector *result = new vector(get_size());
+  int size = get_size();
+  int rpp = size / main_simpi->get_synch_info()->par_count;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++)
+  {
+    result->set(i, get(i) * scaler);
+  }
+  return *result;
+}
+
+vector &vector::add(vector other)
+{
+  vector *result = new vector(get_size());
+  int size = get_size();
+  int rpp = size / main_simpi->get_synch_info()->par_count;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++)
+  {
+    result->set(i, get(i) + other.get(i));
+  }
+  return *result;
+}
+
+vector &vector::subtract(vector other)
+{
+  vector *result = new vector(get_size());
+  int size = get_size();
+  int rpp = size / main_simpi->get_synch_info()->par_count;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++)
+  {
+    result->set(i, get(i) - other.get(i));
+  }
+  return *result;
+}
+
+bool vector::vector_is_equal(vector other)
+{
+  int size = get_size();
+  int rpp = size / main_simpi->get_synch_info()->par_count;
+  int start = rpp * main_simpi->get_id();
+  int end = start + rpp;
+  for (int i = start; i < end; i++)
+  {
+    if (get(i) != other.get(i))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+//Multiplication
+matrix &operator*(matrix &lhs, matrix &rhs)
+{
+  return lhs.multiply(rhs);
+}
+matrix &operator*(int lhs, matrix &rhs)
+{
+  return rhs.scalar_matrix_mult(lhs);
+}
+matrix &operator*(matrix &lhs, int rhs)
+{
+  return lhs.scalar_matrix_mult(rhs);
+}
+vector &operator*(int lhs, vector &rhs)
+{
+  return rhs.scalar_vector_mult(lhs);
+}
+vector &operator*(vector &lhs, int rhs)
+{
+  return lhs.scalar_vector_mult(rhs);
+}
+
+//*=
+void operator*=(matrix &lhs, matrix &rhs)
+{
+  lhs = lhs.multiply(rhs);
+}
+void operator*=(matrix &lhs, int rhs)
+{
+  lhs = lhs.scalar_matrix_mult(rhs);
+}
+void operator*=(vector &lhs, int rhs)
+{
+  lhs = lhs.scalar_vector_mult(rhs);
+}
+
+//Adition
+matrix &operator+(matrix &lhs, matrix &rhs)
+{
+  return lhs.add(rhs);
+}
+vector &operator+(vector &lhs, vector &rhs)
+{
+  return lhs.add(rhs);
+}
+void operator+=(matrix &lhs, matrix &rhs)
+{
+  lhs = lhs.add(rhs);
+}
+void operator+=(vector &lhs, vector &rhs)
+{
+  lhs = lhs.add(rhs);
+}
+void operator-=(matrix &lhs, matrix &rhs)
+{
+  lhs = lhs.subtract(rhs);
+}
+void operator-=(vector &lhs, vector &rhs)
+{
+  lhs = lhs.subtract(rhs);
+}
+matrix &operator-(matrix &lhs, matrix &rhs)
+{
+  return lhs.subtract(rhs);
+}
+vector &operator-(vector &lhs, vector &rhs)
+{
+  return lhs.subtract(rhs);
+}
+bool operator==(matrix &lhs, matrix &rhs)
+{
+  return lhs.matrix_is_equal(rhs);
+}
+bool operator==(vector &lhs, vector &rhs)
+{
+  return lhs.vector_is_equal(rhs);
+}
+
+
