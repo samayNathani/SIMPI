@@ -309,6 +309,12 @@ void matrix::getCofactor(double* A,
   }
 }
 
+/*
+Solves a linear system of equations in parallel if the matrix is diagonally dominant
+outputs solution to a vector of 0s passed into it
+void->void
+*/
+
 void matrix::jacobi(vector* constants, vector* solution) {
 
     int processCount = main_simpi->get_num_workers();
@@ -416,68 +422,98 @@ void matrix::jacobi(vector* constants, vector* solution) {
     return;
 }
 
+
+/*
+Checks if a square matrix is diagonally dominant
+(diagonal terms are greater-than or equal to sum of the rest of their row)
+none->bool
+*/
 bool matrix::isDiagonallyDominant()
 {
-        for(int i = 0; i < get_x(); i ++)
+    for(int i = 0; i < get_x(); i ++)
+    {
+        double sq;
+        double rest = 0;
+        for(int j = 0; j < get_y(); j++)
         {
-            double sq;
-            double rest = 0;
-            for(int j = 0; j < get_y(); j++)
+            if(i==j)
             {
-                if(i==j)
-                {
-                    sq = get(i,j);
-                }
-                else
-                {
-                    rest+=get(i,j);
-                }
+                sq = get(i,j);
             }
-            if (sq < rest)
+            else
             {
-                return false;
+                rest+=get(i,j);
             }
         }
-        return true;
+        if (sq < rest)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
+
+/*
+Solves a linear system of equations
+If the matrix is diagonally dominant, jacobi-iterative method is used
+else, the inverse mutliplication method is used
+takes in a vector of constants that each row is to be solved for and a solution vector of 0s in which the solution will be written in
+void -> void
+*/
 void matrix::solveSystem(vector *constants, vector* solution)
 {
     bool dd = isDiagonallyDominant();
     main_simpi->synch();
     if (dd)
     {
+        main_simpi->synch();
         jacobi(constants, solution);
     }
     else
     {
-        failSafe(constants, solution);
+      if(main_simpi->get_id() == 0)
+      {
+        std::cout<<"failsafe"<<std::endl;
+      }
+      main_simpi->synch();
+      failSafe(constants, solution);
     }
     main_simpi->synch();
 }
 
+/*
+Method to solve a system of linear equations if the system is not diagonally dominant
+Uses the inverse-mutliplication method. 
+void->void
+*/
 void matrix::failSafe(vector* constants, vector* solution)
 {
     matrix inv = inverse();
+    std::cout << "inverse calculated" << std::endl;
     main_simpi->synch();
-    if (main_simpi->get_id() == 0)
+
+    int processCount = main_simpi->get_num_workers();
+    int id = main_simpi->get_id();
+    int work = constants->get_size() / processCount;
+
+    int start = id * work;
+    int end = start + work;
+    int n = constants->get_size();
+    
+    double sol;
+    for(int i = start; i < end; i++)
     {
-      int n = constants->get_size();
-      double sol;
-      for(int i = 0; i < n; i++)
-      {
-          sol = 0;
-          for(int j = 0; j < n; j++)
-          {
-              sol += (inv.get(i, j)*constants->get(j));
-          }
-          solution->get(i) = sol;
-      }
+        sol = 0;
+        for(int j = 0; j < n; j++)
+        {
+            sol += (inv.get(i, j)*constants->get(j));
+        }
+        solution->get(i) = sol;
     }
     main_simpi->synch();
     return;
 }
-
 
 /******************Vector Functions*************************/
 vector::vector(int a)
