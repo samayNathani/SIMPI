@@ -184,7 +184,7 @@ std::ostream& operator<<(std::ostream& out, const matrix& m)
     for (int i = 0; i < m.xdim; i++) {
       out << "\n";
       for (int j = 0; j < m.ydim; j++) {
-        out << std::fixed << std::setprecision(2) << m.arr[i + j * m.xdim];
+        out << m.arr[i + j * m.xdim];
         out << ", ";
       }
     }
@@ -196,30 +196,63 @@ std::ostream& operator<<(std::ostream& out, const matrix& m)
   }
 }
 
-matrix& matrix::inverse()
-{
-  matrix* inverse = new matrix(xdim, ydim);
-  matrix* adj = new matrix(xdim, ydim);
+void matrix::inverse(matrix* inverse)
+  {
+    if (get_x() != get_y()) {
+      std::cout << "Invalid Matrix";
+      exit(1);
+    }
 
-  // Find determinant of A[][]
-  int det = determinant(arr, xdim, xdim);
-  if (det == 0) {
-    std::cout << "Singular matrix, can't find its inverse";
-    return *inverse;
+
+    //matrix* inverse = new matrix(get_x(), get_y());
+    matrix* adj = new matrix(get_x(), get_y());
+
+    // Find determinant of A[][]
+    int det = determinant(arr, get_x(), get_y());
+    if (det == 0) {
+      std::cout << "Singular matrix, can't find its inverse";
+      return;
+    }
+    std::cout << "Determinant is: " << det << '\n';
+
+    main_simpi->synch();
+
+    adjoint(arr, adj->arr, xdim, main_simpi->get_id(),
+            main_simpi->get_num_workers());
+    main_simpi->synch();
+
+
+    int num_processes = main_simpi->get_num_workers();
+    int parID = main_simpi->get_id();
+    int n = get_x();
+    if (num_processes > n) {
+        num_processes = n;
+    }
+
+    int rpp = n/num_processes;
+    int start = main_simpi->get_id() * rpp;
+    int end = start + rpp;
+
+    for (int i = start; i < end; i++)
+      for (int j = 0; j < get_x(); j++) {
+        inverse->get(i, j) = (adj->get(i, j)) / double(det);
+      }
+    if (n%num_processes != 0) {
+        int leftover = n%num_processes;
+        if (parID < leftover) {
+            parID += (n-leftover);
+            int start = parID;
+            int end = start + 1;
+            for (int i = start; i< end; i++){
+                for (int j = 0; j<n; j++) {
+                    inverse->get(i,j) = (adj->get(i,j))/double(det);
+                }
+            }
+        }
+    }
+    main_simpi->synch();
+    return;
   }
-  std::cout << "Determinant is: " << det;
-  main_simpi->synch();
-
-  adjoint(arr, adj->arr, xdim, main_simpi->get_id(),
-          main_simpi->get_num_workers());
-  main_simpi->synch();
-
-  for (int i = 0; i < xdim; i++)
-    for (int j = 0; j < xdim; j++)
-      inverse->get(i, j) = adj->get(i, j) / double(det);
-
-  return *inverse;
-}
 
 int matrix::determinant(double* A, int n, int order)
 {
@@ -257,6 +290,13 @@ void matrix::adjoint(double* A,
     return;
   }
 
+  int num_processes = par_count;
+  int parID = par_id;
+  int n = order;
+  if (num_processes > n) {
+    num_processes = n;
+  }
+
   int rpp = order / par_count;
   int start = par_id * rpp;
   int end = start + rpp;
@@ -277,6 +317,23 @@ void matrix::adjoint(double* A,
       // Interchanging rows and columns to get the
       // transpose of the cofactor matrix
       adj[j + i * order] = (sign) * (determinant(temp, order - 1, order));
+    }
+  }
+  if (n%num_processes != 0) {
+    int leftover = n%num_processes;
+    if (parID < leftover) {
+        parID += (n-leftover);
+        int start = parID;
+        int end = start + 1;
+        for (int i = 0; i <order; i++) {
+            for (int j = start; j<end; j++) {
+                getCofactor(A, temp, i, j, order, order);
+                sign = ((i+j)%2==0)? 1: -1; 
+                adj[j+i*order] = (sign)*(determinant(temp, order-1, order));
+
+
+            }
+        }
     }
   }
 }
@@ -308,6 +365,259 @@ void matrix::getCofactor(double* A,
     }
   }
 }
+
+void matrix::luDecomposition(matrix* lower, matrix* upper) {
+  std::cout << "Code is running!" << '\n';
+
+  if (get_x() != get_y()) {
+    std::cout << "Invalid Matrix";
+    exit(1);
+  }
+
+  for (int i = 0; i < get_x(); i++) {
+    int num_processes = main_simpi->get_num_workers();
+    int parID = main_simpi->get_id();
+    int total = xdim - i;
+    if (num_processes > total) {
+      num_processes = total;
+    }
+    int rpp = total/num_processes;
+    int start = rpp*main_simpi->get_id() + i;
+    int end = start + rpp;
+    // std::cout << "start: " << start << '\n';
+    // std::cout << "end: " << end << '\n';
+    // std::cout << "rpp: " << rpp << '\n' << '\n';
+
+    // Upper Triangular 
+    for (int k = start; k< end; k++) {
+      if (k>=get_x()) {
+        break;
+      }
+      // Summation of L(i, j) * U(j, k) 
+      float sum = 0;
+      for (int j = 0; j < i; j++) 
+        sum += (lower->get(i,j)* upper->get(j,k)); 
+
+      // Evaluating U(i, k) 
+      upper->get(i,k) = get(i,k) - sum; 
+
+    }
+    if (total%num_processes != 0) {
+      int leftover = total%num_processes;
+      if (parID < leftover) {
+        parID += (xdim-leftover);
+        int start = parID;
+        std::cout << "leftover row being worked on: " << start << '\n'<<'\n';
+
+        int end = start + 1;
+        for (int a = start; a<end; a++) {
+          // Summation of L(i, j) * U(j, k) 
+          float sum = 0;
+          for (int j= 0; j<i; j++) 
+            sum+= (lower->get(i,j)*upper->get(j,a));
+          // Evaluating U(i, k) 
+          upper->get(i,a) = get(i,a) - sum;
+        }
+      }
+    }
+
+    main_simpi->synch();
+
+    total = get_x() - i;
+    parID = main_simpi->get_id();
+    num_processes = main_simpi->get_num_workers();
+
+    for (int k = start; k<end; k++) {
+      if (k>=get_x()) {
+        break;
+      }
+      if (i == k) {
+        lower->get(i,i) = 1; // Diagonal as 1 
+      }
+      else {
+        // Summation of L(k, j) * U(j, i)
+        float sum = 0;
+        for (int j = 0; j<i; j++) 
+          sum += (lower->get(k,j) * upper->get(j,i));
+        // Evaluating L(k, i)
+        lower->get(k,i) = ((get(k,i)-sum) / upper->get(i,i));
+      }
+    }
+    if (total%num_processes != 0) {
+      int leftover = total%num_processes;
+      if (parID < leftover) {
+        parID += (get_x()-leftover);
+        int start = parID;
+        int end = start + 1;
+        for (int a = start; a<end; a++) {
+          if (i == a)
+            lower->get(i,i) = 1;
+          else {
+            // Summation of L(k, j) * U(j, i) 
+            float sum = 0;
+            for (int j = 0; j<i; j++) 
+              sum+= (lower->get(a,j) * upper->get(j,i));
+
+            // Evaluating L(k, i) 
+            lower->get(a,i) = (get(a,i)-sum) / upper->get(i,i);
+          }
+        }
+      }
+    }
+    main_simpi->synch();
+
+
+
+
+  }
+return;
+}
+
+void matrix::inverseLU(matrix* inv) {
+  //Check if matrix is square
+  if (get_x() != get_y()) {
+    std::cout << "Invalid Matrix";
+    exit(1);
+  }
+  // int det = determinant(arr, get_x(), get_y());
+  // if (det == 0) {
+  //   std::cout << "Singular matrix, can't find its inverse";
+  //   exit(1);
+  // }
+  // std::cout<<"Stage 1";
+
+
+  //Solve for lower and upper matrices
+  matrix* upper = new matrix(get_x(), get_y());
+  matrix* lower = new matrix(get_x(), get_y());
+  luDecomposition(lower,upper);
+  std::cout<<"Stage 2";
+  main_simpi->synch();
+
+  //Create Identity nxn Matrix
+  matrix* identity = new matrix(get_x(), get_y());
+  if (main_simpi->get_id() == 0) {
+    for (int i = 0; i<get_x(); i++) {
+      for (int j = 0; j<get_x(); j++) {
+        if (i == j) {
+          identity->get(i,j) = 1;
+        }
+        else {
+          identity->get(i,j) = 0;                
+        }
+      }
+    }
+  }
+
+  main_simpi->synch();
+  std::cout<<"Stage 3";
+  // Calculate columns per parallel process
+  int cpp = get_x()/main_simpi->get_num_workers();
+  int start = cpp*main_simpi->get_id();
+  int end = start + cpp;
+
+  // Initialize necessary arrays for future calculations
+  // Each array is local to its own process
+  float identity_col[get_x()];
+  float z_col[get_x()];
+  float soln_col[get_x()];
+
+  for (int a = start; a<end; a++) {
+
+    //Get individual columns of identity matrix
+    for (int b = 0; b<get_x(); b++) {
+      identity_col[b] = identity->get(b,a);
+    }
+
+    //Reset Z column to solve for again
+    for (int d = 0; d<get_x(); d++) {
+      z_col[d] = 0;
+    }
+  
+    //Solve LZ = I
+    (*lower).forward_substitution(identity_col, z_col);
+
+    //Reset X column to solve for again
+    for (int d = 0; d<get_x(); d++) {
+      soln_col[d] = 0;
+    }
+
+    //Solve UX = Z
+    (*upper).backward_substitution(z_col, soln_col);
+
+    //Input X column to corresponding columnn in final inverse matrix
+    for (int c = 0; c<get_x(); c++) {
+      inv->get(c,a) = soln_col[c];
+    }
+  }
+  int parID = main_simpi->get_id();
+  if (get_x()%main_simpi->get_num_workers() != 0) {
+    int leftover = get_x() % main_simpi->get_num_workers();
+    if (parID < leftover) {
+      parID += (get_x()-leftover);
+      int start = parID;
+      int end = start + 1;
+      for (int a = start; a<end; a++) {
+        //Get individual columns of identity matrix
+        for (int b = 0; b<get_x(); b++) {
+          identity_col[b] = identity->get(b,a);
+        }
+
+        //Reset Z column to solve for again
+        for (int d = 0; d<get_x(); d++) {
+          z_col[d] = 0;
+        }
+      
+        //Solve LZ = I
+        (*lower).forward_substitution(identity_col, z_col);
+
+        //Reset X column to solve for again
+        for (int d = 0; d<get_x(); d++) {
+          soln_col[d] = 0;
+        }
+
+        //Solve UX = Z
+        (*upper).backward_substitution(z_col, soln_col);
+
+        //Input X column to corresponding columnn in final inverse matrix
+        for (int c = 0; c<get_x(); c++) {
+          inv->get(c,a) = soln_col[c];
+        }
+      }
+    }
+  }  
+
+  main_simpi->synch();
+  return;
+
+}
+
+void matrix::forward_substitution(float *b, float* x)
+{
+    double suma;
+    for(int i=0; i < get_x(); i=i+1)
+    {
+        suma = 0;
+        for(int j=0;j<i;j=j+1)
+            suma = suma+ get(i,j) * x[j];
+
+        x[i] = (b[i]-suma)/get(i,i);
+    }
+}
+
+void matrix::backward_substitution(float* b, float* x)
+{
+    double suma;
+    for(int i= get_x()-1; i>=0; i=i-1)
+    {
+        suma=0;
+        for(int j = get_x() - 1; j > i; j =j-1)
+            suma = suma + get(i,j) * x[j];
+ 
+        x[i]=(b[i] - suma)/get(i,i);
+    }
+}
+
 
 void matrix::jacobi(vector* constants, vector* solution) {
 
@@ -445,6 +755,7 @@ void matrix::solveSystem(vector *constants, vector* solution)
 {
     bool dd = isDiagonallyDominant();
     main_simpi->synch();
+    // hi
     if (dd)
     {
         jacobi(constants, solution);
@@ -458,7 +769,8 @@ void matrix::solveSystem(vector *constants, vector* solution)
 
 void matrix::failSafe(vector* constants, vector* solution)
 {
-    matrix inv = inverse();
+    matrix* inv = new matrix(get_x(), get_y());
+    inverse(inv);
     main_simpi->synch();
     if (main_simpi->get_id() == 0)
     {
@@ -469,7 +781,7 @@ void matrix::failSafe(vector* constants, vector* solution)
           sol = 0;
           for(int j = 0; j < n; j++)
           {
-              sol += (inv.get(i, j)*constants->get(j));
+              sol += (inv->get(i, j)*constants->get(j));
           }
           solution->get(i) = sol;
       }
@@ -493,3 +805,14 @@ vector::~vector()  // destructor
   // use main_simpi for getting rid of the mem and unlink stuff
   main_simpi->free_matrix(unique_id);
 }
+
+
+  // if (main_simpi->get_id() == 0) {
+  //   for (int i = 0; i < xdim; i++) {
+  //     std::cout << "\n";
+  //     for (int j = 0; j < ydim; j++) {
+  //       std::cout << std::fixed << std::setprecision(7) << identity->get(i,j);
+  //       std::cout << ", ";
+  //     }
+  //   }
+  // }
