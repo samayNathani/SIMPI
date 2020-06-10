@@ -213,6 +213,26 @@ std::ostream &operator<<(std::ostream &out, const matrix &m)
 	}
 }
 
+std::ostream &operator<<(std::ostream &out, const vector &m)
+{
+	if (main_simpi->get_id() == 0)
+	{
+		out << "\n";
+		for (int i = 0; i < m.dim; i++)
+		{
+			out << std::fixed << std::setprecision(2) << m.arr[i];
+			out << ", ";
+		
+		}
+		out << "\n";
+		return out;
+	}
+	else
+	{
+		return out;
+	}
+}
+
 matrix &matrix::inverse()
 {
 	matrix *inverse = new matrix(xdim, ydim);
@@ -534,6 +554,11 @@ vector::~vector() // destructor
 	main_simpi->free_matrix(unique_id);
 }
 
+
+/*
+Solves matrix multiplication in parallel and outputs the product solution 
+matrix -> matrix
+*/
 matrix &matrix::multiply(matrix other)
 {
   matrix *result = new matrix(xdim, other.get_y());
@@ -576,13 +601,8 @@ matrix &matrix::multiply(matrix other)
   }
   if (Acol != Brow)
   {
-    // Send error
-    printf("error");
+    printf("Error. Matrices can't be multiplied\n");
   }
-  //   main_simpi->synch();
-  //   main_simpi->synch();
-  printf("Start = %d\n", start);
-  printf("end = %d\n", end);
   for (int a = start; a < end; a++)
   {
     for (int b = 0; b < Arow; b++)
@@ -599,6 +619,10 @@ matrix &matrix::multiply(matrix other)
   return *result;
 }
 
+/*
+Outputs the trasnpose solution of a matrix entered 
+void -> matrix
+*/
 matrix &matrix::transpose()
 {
   matrix *result = new matrix(get_y(), get_x());
@@ -620,15 +644,16 @@ matrix &matrix::transpose()
   {
     for (int j = 0; j < Acol; j++)
     {
-      // if(A[j*Arow + i] == 4){
-      //     printf("LESSS GOOO = %d\n", j+i*Arow);
-      // }
       result->set(j + i * Acol, get_algbera(j * Arow + i));
     }
   }
   return *result;
 }
 
+/*
+Solves matrix multiplication in parallel and outputs the product solution 
+matrix -> matrix
+*/
 matrix &matrix::add(matrix other)
 {
   matrix *result = new matrix( get_x(), get_y());
@@ -649,9 +674,8 @@ matrix &matrix::add(matrix other)
   int start = rpp * main_simpi->get_id();
   int end = start + rpp;
 
-  if (Arow != Brow || Acol != Bcol)
-  {
-    // raise error
+  if (Arow != Brow || Acol != Bcol){
+	  //raise error
   }
   if (get_x() % number_of_processes != 0)
   {
@@ -682,6 +706,10 @@ matrix &matrix::add(matrix other)
   // printf("End of alg\n");
   return *result;
 }
+/*
+Solves matrix subtraction in parallel and outputs the difference 
+matrix -> matrix
+*/
 
 matrix &matrix::subtract(matrix other)
 {
@@ -729,6 +757,10 @@ matrix &matrix::subtract(matrix other)
   return *result;
 }
 
+/*
+Solves matrix scalar multiplication in parallel and outputs the resultant matrix 
+matrix -> matrix
+*/
 matrix &matrix::scalar_matrix_mult(int scaler)
 {
   matrix *result = new matrix( get_x(), get_y());
@@ -755,6 +787,10 @@ matrix &matrix::scalar_matrix_mult(int scaler)
   return *result;
 }
 
+/*
+Solves matrix equality and outputs the apt boolean value 
+matrix -> bool
+*/
 bool matrix::matrix_is_equal(matrix other)
 {
   int number_of_processes = main_simpi->get_synch_info()->par_count;
@@ -774,7 +810,7 @@ bool matrix::matrix_is_equal(matrix other)
 
   if (Arow != Brow || Acol != Bcol)
   {
-    // error
+	return false;
   }
 
   for (int i = start; i < end; i++)
@@ -791,6 +827,30 @@ bool matrix::matrix_is_equal(matrix other)
   return true;
 }
 
+/*
+Solves vector multiplication in parallel and outputs the resultant integer 
+vector -> int
+*/
+
+int vector::multiply(vector other)
+{
+
+  int sum = 0;
+  if (get_size() != other.get_size())
+  {
+	  printf("error: sizes don't match");
+  }
+  for (int i = 0; i < get_size(); i++)
+  {
+    sum += get(i) * other.get(i);
+  }
+  return sum;
+}
+
+/*
+Solves vector scalar multiplication in parallel and outputs the resultant vector 
+vector,int -> vector
+*/
 vector &vector::scalar_vector_mult(int scaler)
 {
   vector *result = new vector(get_size());
@@ -805,6 +865,10 @@ vector &vector::scalar_vector_mult(int scaler)
   return *result;
 }
 
+/*
+Solves vector addition in parallel and outputs the resultant vector 
+vector-> vector
+*/
 vector &vector::add(vector other)
 {
   vector *result = new vector(get_size());
@@ -819,6 +883,10 @@ vector &vector::add(vector other)
   return *result;
 }
 
+/*
+Solves vector subtraction in parallel and outputs the resultant vector 
+vector-> vector
+*/
 vector &vector::subtract(vector other)
 {
   vector *result = new vector(get_size());
@@ -833,6 +901,10 @@ vector &vector::subtract(vector other)
   return *result;
 }
 
+/*
+Solves vector equality and outputs the apt boolean value 
+vector-> boolean
+*/
 bool vector::vector_is_equal(vector other)
 {
   int size = get_size();
@@ -849,6 +921,8 @@ bool vector::vector_is_equal(vector other)
   return true;
 }
 
+//Operator Overloading :-
+
 //Multiplication
 matrix &operator*(matrix &lhs, matrix &rhs)
 {
@@ -861,6 +935,10 @@ matrix &operator*(int lhs, matrix &rhs)
 matrix &operator*(matrix &lhs, int rhs)
 {
   return lhs.scalar_matrix_mult(rhs);
+}
+int operator*(vector &lhs, vector &rhs)
+{
+  return lhs.multiply(rhs);
 }
 vector &operator*(int lhs, vector &rhs)
 {
@@ -894,22 +972,8 @@ vector &operator+(vector &lhs, vector &rhs)
 {
   return lhs.add(rhs);
 }
-void operator+=(matrix &lhs, matrix &rhs)
-{
-  lhs = lhs.add(rhs);
-}
-void operator+=(vector &lhs, vector &rhs)
-{
-  lhs = lhs.add(rhs);
-}
-void operator-=(matrix &lhs, matrix &rhs)
-{
-  lhs = lhs.subtract(rhs);
-}
-void operator-=(vector &lhs, vector &rhs)
-{
-  lhs = lhs.subtract(rhs);
-}
+
+//Subtraction
 matrix &operator-(matrix &lhs, matrix &rhs)
 {
   return lhs.subtract(rhs);
@@ -918,6 +982,28 @@ vector &operator-(vector &lhs, vector &rhs)
 {
   return lhs.subtract(rhs);
 }
+
+//+=
+void operator+=(matrix &lhs, matrix &rhs)
+{
+  lhs = lhs.add(rhs);
+}
+void operator+=(vector &lhs, vector &rhs)
+{
+  lhs = lhs.add(rhs);
+}
+
+//-=
+void operator-=(matrix &lhs, matrix &rhs)
+{
+  lhs = lhs.subtract(rhs);
+}
+void operator-=(vector &lhs, vector &rhs)
+{
+  lhs = lhs.subtract(rhs);
+}
+
+//Overloading ==
 bool operator==(matrix &lhs, matrix &rhs)
 {
   return lhs.matrix_is_equal(rhs);
