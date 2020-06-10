@@ -89,11 +89,15 @@ class matrix  // similar stuff for vector
   void getCofactor(double* A, double* temp, int p, int q, int n, int order);
   double get_algbera(int pos) { return arr[pos]; }
   void set(int pos, int val) { arr[pos] = val; }
-  matrix& inverse();
+  void inverse(matrix *inverse);
+  void luDecomposition(matrix* lower, matrix* upper);
+  void inverseLU(matrix* inverse);
   void solveSystem(vector* constants, vector* solution);
   void jacobi(vector* constants, vector* solution);
   void failSafe(vector* constants, vector* solution);
   bool isDiagonallyDominant();
   friend std::ostream& operator<<(std::ostream& out, const matrix& m);
   double& get(int x, int y) { return arr[x + y * xdim]; }
+  void backward_substitution(float* b, float* x);
+  void forward_substitution(float *b, float* x); 
 };
