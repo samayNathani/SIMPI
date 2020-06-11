@@ -89,7 +89,11 @@ class matrix  // similar stuff for vector
   void getCofactor(double* A, double* temp, int p, int q, int n, int order);
   double get_algbera(int pos) { return arr[pos]; }
   void set(int pos, int val) { arr[pos] = val; }
-  matrix& inverse();
+  void inverse_old(matrix *inverse);
+  void luDecomposition(matrix* lower, matrix* upper);
+  void inverse(matrix* inverse);
+  void backward_substitution(float* b, float* x);
+  void forward_substitution(float *b, float* x); 
   void solveSystem(vector* constants, vector* solution);
   void jacobi(vector* constants, vector* solution);
   void failSafe(vector* constants, vector* solution);

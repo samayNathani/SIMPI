@@ -2,8 +2,8 @@
 #include <string.h>
 
 #include "simpi.h"
-#define MATRIX_DIMENSION_X 2
-#define MATRIX_DIMENSION_Y 3
+#define MATRIX_DIMENSION_X 10
+#define MATRIX_DIMENSION_Y 10
 
 int par_id;
 
@@ -28,15 +28,15 @@ int main(int argc, char* argv[])
 
   for (int y = 0; y < MATRIX_DIMENSION_Y; y++) {
     for (int x = 0; x < MATRIX_DIMENSION_X; x++) {
-      A.get(x, y) = (double)x + y;
+      A.get(x, y) = rand()%10 + 1;
     }
   }
   SIMPI_SYNCH();
 
-  //C = A.inverse();
+  A.inverse(&C);
   std::cout << A;
   
-  std::cout << A;
+  std::cout << C;
 
   //C= A.inverse();
 
